@@ -1,0 +1,78 @@
+package vanguard:ics-guardian@0.1.0;
+
+// ============================================================
+// vanguard ics guardian - security simulation world
+// ============================================================
+//
+// this world defines a wasm component that requests access to filesystem
+// and network capabilities via standard wasi 0.2 interfaces.
+//
+// the key insight: the guest component asks for these capabilities,
+// but the HOST decides what to actually provide. this is capability-based
+// security in action - the "principle of least authority" (pola).
+//
+// in our simulation:
+// - the guest is a "malicious" 3rd-party sensor driver
+// - the host acts as a "data diode" - allows reads, blocks network
+// ============================================================
+
+world ics-guardian {
+
+    // ------------------------------------------------------------
+    // filesystem imports
+    // ------------------------------------------------------------
+    // these let the guest read files from a virtual filesystem.
+    // in real wasi, the host "preopens" specific directories,
+    // and the guest can only access those - no arbitrary paths.
+    
+    // types: defines descriptor, error-code, open-flags, etc.
+    import wasi:filesystem/types@0.2.0;
+    
+    // preopens: get-directories() returns the dirs the host granted us
+    import wasi:filesystem/preopens@0.2.0;
+    
+    // ------------------------------------------------------------
+    // socket imports
+    // ------------------------------------------------------------
+    // these let the guest attempt tcp connections.
+    // our host will BLOCK all of these - that's the "data diode".
+    
+    // network: defines ip addresses, error codes for sockets
+    import wasi:sockets/network@0.2.0;
+    
+    // tcp: the actual tcp-socket resource with connect/listen/etc
+    import wasi:sockets/tcp@0.2.0;
+    
+    // ------------------------------------------------------------
+    // io stream imports
+    // ------------------------------------------------------------
+    // wasi uses streams for reading/writing file contents.
+    // these are the low-level primitives.
+    
+    // error: defines the error type for stream operations
+    import wasi:io/error@0.2.0;
+    
+    // streams: input-stream and output-stream resources
+    import wasi:io/streams@0.2.0;
+    
+    // ------------------------------------------------------------
+    // cli imports
+    // ------------------------------------------------------------
+    // for printing to console - how our driver reports its actions.
+    
+    // stdout: get-stdout() returns an output-stream for printing
+    import wasi:cli/stdout@0.2.0;
+    
+    // stderr: get-stderr() for error messages
+    import wasi:cli/stderr@0.2.0;
+    
+    // ------------------------------------------------------------
+    // component export
+    // ------------------------------------------------------------
+    // this is what the host calls to start the driver.
+    // the driver will attempt to:
+    // 1. read sensor data from /mnt/sensor_data.json
+    // 2. exfiltrate it to 1.1.1.1:80 (cloudflare dns, simulating vendor cloud)
+    
+    export run: func();
+}
