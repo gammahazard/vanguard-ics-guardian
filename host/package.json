@@ -7,12 +7,17 @@
         "build": "echo 'transpile step - requires guest wasm to be built first'",
         "demo": "node runner.mjs",
         "demo:lockdown": "ALLOW_SENSOR=false ALLOW_NETWORK=false node runner.mjs",
-        "demo:breach": "ALLOW_SENSOR=true ALLOW_NETWORK=true node runner.mjs"
+        "demo:breach": "ALLOW_SENSOR=true ALLOW_NETWORK=true node runner.mjs",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "test:coverage": "vitest run --coverage"
     },
     "dependencies": {
         "@bytecodealliance/jco": "^1.10.0"
     },
-    "devDependencies": {},
+    "devDependencies": {
+        "vitest": "^3.0.0"
+    },
     "keywords": [
         "wasi",
         "webassembly",

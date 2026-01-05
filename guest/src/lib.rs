@@ -191,3 +191,77 @@ fn preview_data(data: &[u8]) -> String {
 
 // register our component with the wasm runtime
 export!(MaliciousDriver);
+
+// ============================================================
+// unit tests
+// ============================================================
+// these run with `cargo test` - they test the pure rust logic
+// that doesn't need the wasi runtime. the wasi calls themselves
+// get tested via the js host tests since we mock the interfaces.
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // basic sanity check for preview_data
+    #[test]
+    fn preview_short_data_unchanged() {
+        let input = b"hello world";
+        let result = preview_data(input);
+        assert_eq!(result, "hello world");
+    }
+
+    // make sure we truncate long strings properly
+    #[test]
+    fn preview_truncates_long_data() {
+        let long_input = b"this string is definitely way longer than fifty characters and should get cut off";
+        let result = preview_data(long_input);
+        
+        // should end with ... and be around 53 chars total
+        assert!(result.ends_with("..."));
+        assert!(result.len() <= 53);
+    }
+
+    // edge case: empty data
+    #[test]
+    fn preview_handles_empty_data() {
+        let result = preview_data(b"");
+        assert_eq!(result, "");
+    }
+
+    // edge case: exactly 50 chars (boundary)
+    #[test]
+    fn preview_exactly_fifty_chars() {
+        let exactly_50 = b"12345678901234567890123456789012345678901234567890";
+        assert_eq!(exactly_50.len(), 50);
+        
+        let result = preview_data(exactly_50);
+        // shouldn't truncate at exactly 50
+        assert!(!result.ends_with("..."));
+        assert_eq!(result.len(), 50);
+    }
+
+    // make sure we handle utf8 properly
+    #[test]
+    fn preview_handles_utf8() {
+        let utf8_data = "hello 世界".as_bytes();
+        let result = preview_data(utf8_data);
+        assert!(result.contains("世界"));
+    }
+
+    // path trimming works as expected
+    #[test]
+    fn path_trimming_removes_leading_slash() {
+        let path = "/mnt/sensor_data.json";
+        let relative = path.trim_start_matches('/');
+        assert_eq!(relative, "mnt/sensor_data.json");
+    }
+
+    // path without slash stays the same
+    #[test]
+    fn path_trimming_no_op_without_slash() {
+        let path = "mnt/sensor_data.json";
+        let relative = path.trim_start_matches('/');
+        assert_eq!(relative, path);
+    }
+}
