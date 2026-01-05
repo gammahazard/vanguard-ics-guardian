@@ -1,0 +1,33 @@
+# trunk.toml - build config for leptos dashboard
+#
+# trunk is the build tool for rust wasm apps. it handles:
+# - compiling rust to wasm
+# - bundling assets (css, html)
+# - serving with live reload for dev
+#
+# commands:
+#   trunk serve       - dev server with live reload (http://localhost:8080)
+#   trunk build       - build for production
+#   trunk build --release - optimized production build
+
+[build]
+# output directory for built files
+dist = "dist"
+
+# target for wasm compilation
+target = "index.html"
+
+[watch]
+# files to watch for changes
+watch = ["src", "index.html", "styles.css"]
+
+[serve]
+# dev server config
+address = "127.0.0.1"
+port = 8080
+open = true
+
+# proxy api requests if needed (not used currently)
+# [[proxy]]
+# rewrite = "/api/"
+# backend = "http://localhost:3000/api/"

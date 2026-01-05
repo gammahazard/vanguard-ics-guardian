@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vanguard ICS Guardian - Security Console</title>
+    <meta name="description" content="WASI 0.2 security simulation demonstrating capability-based sandboxing for industrial control systems.">
+    
+    <!-- favicon - shield emoji as svg -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+    
+    <!-- google font for clean look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- our styles -->
+    <link data-trunk rel="css" href="styles.css">
+</head>
+<body>
+    <!-- leptos mounts the app here -->
+    <!-- trunk will inject the wasm loader script -->
+    <link data-trunk rel="rust" data-wasm-opt="z"/>
+</body>
+</html>

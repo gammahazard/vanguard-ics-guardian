@@ -1,0 +1,31 @@
+# dashboard - leptos security console ui
+#
+# this is the web frontend for visualizing the ics guardian simulation.
+# built with leptos (rust-to-wasm) for maximum rust-centric portfolio impact.
+#
+# local dev: trunk serve
+# build:     trunk build --release
+# deploy:    static files go to dist/ - works with gh pages or vercel
+
+[package]
+name = "ics-guardian-dashboard"
+version = "0.1.0"
+edition = "2021"
+description = "Web dashboard for ICS Guardian security simulation"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+# leptos - reactive rust web framework
+# using csr (client-side rendering) for static deployment
+leptos = { version = "0.7", features = ["csr"] }
+
+# for console logging in wasm
+console_error_panic_hook = "0.1"
+wasm-bindgen = "0.2"
+
+[profile.release]
+# optimize for size since this runs in browser
+opt-level = "z"
+lto = true

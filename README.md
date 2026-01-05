@@ -45,14 +45,16 @@
 | **Guest** | Rust → WASM | Untrusted sensor driver attempting data theft |
 | **Host** | JavaScript (JCO) | The "Warden" runtime controlling capabilities |
 | **Interface** | WIT (WASI 0.2) | Standard capability contracts |
-| **Dashboard** | HTML/JS | Real-time security console |
+| **Dashboard** | Rust + Leptos | Real-time security console (compiles to WASM) |
 
 ## 🔧 Tech Stack
 
 - **Standard:** WASI 0.2 (Preview 2) Component Model
 - **Guest Language:** Rust with `cargo-component`
 - **Host Runtime:** JavaScript via `@bytecodealliance/jco`
+- **Dashboard:** Leptos (Rust reactive web framework)
 - **Interface Definition:** WIT with `wit-bindgen`
+
 
 ## 📁 Project Structure
 
