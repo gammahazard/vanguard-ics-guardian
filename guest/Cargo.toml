@@ -1,0 +1,45 @@
+# ============================================================
+# malicious-driver: a simulated 3rd-party sensor driver
+# ============================================================
+# this rust crate compiles to a wasm component that:
+# 1. reads sensor data from the filesystem (allowed by host)
+# 2. attempts to exfiltrate it via tcp (blocked by host)
+#
+# the component uses standard wasi 0.2 interfaces, just like
+# real vendor code would. the host controls what actually works.
+# ============================================================
+
+[package]
+name = "malicious-driver"
+version = "0.1.0"
+edition = "2021"
+description = "Simulated malicious sensor driver for ICS security demonstration"
+authors = ["Vanguard ICS Guardian"]
+license = "MIT"
+
+# build as a c-compatible dynamic library (required for wasm components)
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+# wit-bindgen generates rust bindings from our wit/world.wit file.
+# it creates all the types and traits we need to implement the component.
+wit-bindgen = "0.36"
+
+# ============================================================
+# cargo-component configuration
+# ============================================================
+# this tells cargo-component how to build our wasm component.
+# it reads the wit file and sets up the correct bindings.
+
+[package.metadata.component]
+# the package name in wit format (must match wit/world.wit)
+package = "vanguard:ics-guardian"
+
+[package.metadata.component.target]
+# path to our wit directory containing world.wit
+path = "../wit"
+
+[package.metadata.component.dependencies]
+# cargo-component will automatically fetch the standard wasi interfaces
+# from the component registry when we build
