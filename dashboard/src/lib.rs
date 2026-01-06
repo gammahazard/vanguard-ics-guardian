@@ -332,12 +332,19 @@ fn DeploymentPanel() -> impl IntoView {
     let (deploy_complete, set_deploy_complete) = signal(false);
     let (selected_package, set_selected_package) = signal(0_usize); // 0=minimal, 1=full, 2=ml
     
-    // package size scenarios: (name, docker_mb, wasi_kb, docker_start_sec, wasi_start_ms)
-    let packages = vec![
-        ("Minimal Sensor Driver", 200, 15, 3, 5),      // our actual measured WASM
-        ("Full Processing Suite", 800, 500, 8, 50),   // with data processing
-        ("ML Inference Engine", 2000, 5000, 15, 200), // tensorflow/onnx
-    ];
+    // helper functions to get package data (avoids closure ownership issues)
+    fn get_docker_mb(idx: usize) -> i32 {
+        match idx { 0 => 200, 1 => 800, _ => 2000 }
+    }
+    fn get_wasi_kb(idx: usize) -> i32 {
+        match idx { 0 => 15, 1 => 500, _ => 5000 }
+    }
+    fn get_docker_start(idx: usize) -> i32 {
+        match idx { 0 => 3, 1 => 8, _ => 15 }
+    }
+    fn get_wasi_start(idx: usize) -> i32 {
+        match idx { 0 => 5, 1 => 50, _ => 200 }
+    }
     
     let run_deployment = move |_| {
         set_is_deploying.set(true);
@@ -392,15 +399,14 @@ fn DeploymentPanel() -> impl IntoView {
                         <div class="metric">
                             <span class="metric-label">"Image Size"</span>
                             <span class="metric-value">{move || {
-                                let pkg = &packages[selected_package.get()];
-                                format!("~{} MB", pkg.1)
+                                format!("~{} MB", get_docker_mb(selected_package.get()))
                             }}</span>
                         </div>
                         <div class="metric">
                             <span class="metric-label">"Download @ 1Mbps"</span>
                             <span class="metric-value">{move || {
-                                let pkg = &packages[selected_package.get()];
-                                let seconds = (pkg.1 * 8) as f64; // MB to seconds at 1 Mbps
+                                let docker_mb = get_docker_mb(selected_package.get());
+                                let seconds = (docker_mb * 8) as f64; // MB to seconds at 1 Mbps
                                 if seconds > 60.0 {
                                     format!("~{:.0} min", seconds / 60.0)
                                 } else {
@@ -411,8 +417,7 @@ fn DeploymentPanel() -> impl IntoView {
                         <div class="metric">
                             <span class="metric-label">"Cold Start"</span>
                             <span class="metric-value">{move || {
-                                let pkg = &packages[selected_package.get()];
-                                format!("~{} sec", pkg.3)
+                                format!("~{} sec", get_docker_start(selected_package.get()))
                             }}</span>
                         </div>
                     </div>
@@ -433,19 +438,19 @@ fn DeploymentPanel() -> impl IntoView {
                         <div class="metric">
                             <span class="metric-label">"Component Size"</span>
                             <span class="metric-value good">{move || {
-                                let pkg = &packages[selected_package.get()];
-                                if pkg.2 >= 1000 {
-                                    format!("~{} MB", pkg.2 / 1000)
+                                let wasi_kb = get_wasi_kb(selected_package.get());
+                                if wasi_kb >= 1000 {
+                                    format!("~{} MB", wasi_kb / 1000)
                                 } else {
-                                    format!("~{} KB", pkg.2)
+                                    format!("~{} KB", wasi_kb)
                                 }
                             }}</span>
                         </div>
                         <div class="metric">
                             <span class="metric-label">"Download @ 1Mbps"</span>
                             <span class="metric-value good">{move || {
-                                let pkg = &packages[selected_package.get()];
-                                let seconds = (pkg.2 as f64 * 8.0) / 1000.0; // KB to seconds at 1 Mbps
+                                let wasi_kb = get_wasi_kb(selected_package.get());
+                                let seconds = (wasi_kb as f64 * 8.0) / 1000.0; // KB to seconds at 1 Mbps
                                 if seconds < 1.0 {
                                     format!("~{:.1} sec", seconds)
                                 } else {
@@ -456,8 +461,7 @@ fn DeploymentPanel() -> impl IntoView {
                         <div class="metric">
                             <span class="metric-label">"Cold Start"</span>
                             <span class="metric-value good">{move || {
-                                let pkg = &packages[selected_package.get()];
-                                format!("~{} ms", pkg.4)
+                                format!("~{} ms", get_wasi_start(selected_package.get()))
                             }}</span>
                         </div>
                     </div>
@@ -471,15 +475,16 @@ fn DeploymentPanel() -> impl IntoView {
             </div>
             
             {move || if deploy_complete.get() {
-                let pkg = &packages[selected_package.get()];
-                let size_ratio = (pkg.1 * 1000) / pkg.2; // Docker MB to KB vs WASI KB
-                let download_ratio = (pkg.1 * 1000) / pkg.2;
+                let idx = selected_package.get();
+                let docker_mb = get_docker_mb(idx);
+                let wasi_kb = get_wasi_kb(idx);
+                let size_ratio = (docker_mb * 1000) / wasi_kb;
                 view! {
                     <div class="deploy-result">
                         <p>"⚡ WASI deployed "</p>
                         <strong>{format!("{}x smaller", size_ratio)}</strong>
                         <p>" with "</p>
-                        <strong>{format!("{}x faster download", download_ratio)}</strong>
+                        <strong>{format!("{}x faster download", size_ratio)}</strong>
                     </div>
                 }.into_any()
             } else {
