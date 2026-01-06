@@ -1,0 +1,40 @@
+﻿cargo :     Checking 
+ics-guardian-dashboard v0.1.0 (C:
+\Users\mongo\Desktop\wasi-mock\da
+shboard)
+At line:1 char:1
++ cargo check 2>&1 | Out-File 
+-FilePath check_output.txt 
+-Encoding utf8 ...
++ ~~~~~~~~~~~~~~~~
+    + CategoryInfo          : No 
+   tSpecified: (    Checking ic  
+  ...mock\dashboard):String) [   
+ ], RemoteException
+    + FullyQualifiedErrorId : Na 
+   tiveCommandError
+ 
+error[E0063]: missing field `id` 
+in initializer of `LogEntry`
+   --> src\lib.rs:605:47
+    |
+605 | ...                   
+logs.push(LogEntry {
+    |                            
+     ^^^^^^^^ missing `id`
+
+error[E0063]: missing field `id` 
+in initializer of `LogEntry`
+   --> src\lib.rs:638:31
+    |
+638 |                     
+logs.push(LogEntry {
+    |                            
+   ^^^^^^^^ missing `id`
+
+For more information about this 
+error, try `rustc --explain 
+E0063`.
+error: could not compile 
+`ics-guardian-dashboard` (lib) 
+due to 2 previous errors

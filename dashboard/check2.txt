@@ -1,0 +1,71 @@
+﻿cargo :     Checking 
+ics-guardian-dashboard v0.1.0 (
+C:\Users\mongo\Desktop\wasi-moc
+k\dashboard)
+At line:1 char:1
++ cargo check 2>&1 | Out-File 
+-FilePath check2.txt -Encoding 
+utf8; Get- ...
++ ~~~~~~~~~~~~~~~~
+    + CategoryInfo          :  
+   NotSpecified: (    Checkin  
+  g ic...mock\dashboard):Str   
+ ing) [], RemoteException
+    + FullyQualifiedErrorId :  
+   NativeCommandError
+ 
+error[E0597]: `msg` does not 
+live long enough
+   --> src\lib.rs:596:76
+    |
+594 |                          
+ if let Some(msg) = 
+log_msg.as_string() {
+    |                          
+             --- binding `msg` 
+declared here
+595 |                          
+     // Parse the log prefix 
+and message
+596 |                          
+     let (level, prefix, 
+message) = 
+parse_guest_log(&msg);
+    |                          
+                               
+                     ^^^^ 
+borrowed value does not live 
+long enough
+...
+602 | /                        
+     Timeout::new(delay, move 
+|| {
+603 | |                        
+         set_log.update(|logs| 
+{
+604 | |                        
+             
+logs.push(LogEntry {
+605 | |                        
+                 level: 
+level.to_string(),
+...   |
+609 | |                        
+         });
+610 | |                        
+     }).forget();
+    | |________________________
+______- argument requires that 
+`msg` is borrowed for `'static`
+611 |                          
+ }
+    |                          
+ - `msg` dropped here while 
+still borrowed
+
+For more information about 
+this error, try `rustc 
+--explain E0597`.
+error: could not compile 
+`ics-guardian-dashboard` (lib) 
+due to 1 previous error
