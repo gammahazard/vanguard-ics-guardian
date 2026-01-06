@@ -121,6 +121,32 @@ cd host && npm test
 cd guest && cargo test
 ```
 
+## 🏭 IEC 62443 Alignment
+
+This project demonstrates key principles from the **IEC 62443** industrial cybersecurity standard:
+
+| IEC 62443 Principle | Our Implementation |
+|---------------------|-------------------|
+| **Zone & Conduit Model** | OT zone (sensors) isolated from IT/Cloud via data diode |
+| **Defense in Depth** | WASI capability model adds runtime-level security layer |
+| **Least Privilege** | Components only receive explicitly granted capabilities |
+| **Secure by Default** | Network access denied unless specifically allowed |
+| **Unidirectional Gateways** | Data Diode mode: read IN, block OUT |
+
+> ⚠️ **Note:** This is a demonstration/simulation, not a certified IEC 62443 product. Formal compliance requires third-party assessment.
+
+## 📡 Bandwidth Reality: Remote Deployments
+
+For offshore oil rigs with limited satellite connectivity (~1 Mbps):
+
+| Package | Docker (~500 MB) | WASI (~200 KB) |
+|---------|:----------------:|:--------------:|
+| **Download Time** | ~67 minutes | ~1.6 seconds |
+| **Network Impact** | Saturates link | Negligible |
+| **Failover Speed** | Minutes | Milliseconds |
+
+*This is why WASI matters for remote ICS environments.*
+
 ## 🌿 Branch Strategy
 
 | Branch | Purpose | Deployment |
@@ -138,3 +164,4 @@ MIT © 2026
 <p align="center">
   <em>Built to demonstrate capability-based security for industrial control systems.</em>
 </p>
+
