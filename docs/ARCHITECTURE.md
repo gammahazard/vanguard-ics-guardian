@@ -81,18 +81,25 @@ Attack Surface: Only granted capabilities
 The WASI Component Model enforces security through **imports**. A component can only use capabilities it explicitly imports, and the host must provide them:
 
 ```wit
-// world.wit - "polyfill" approach for local interfaces
-// mirrors WASI behavior without registry dependencies
+// world.wit - Standard WASI 0.2 Interfaces
+package vanguard:ics;
+
 world ics-guardian {
-    import sensor-fs;   // ✓ granted (read sensors)
-    import sensor-net;  // ✗ blocked by host (data diode)
+    // Restrict the standard filesystem interface
+    import wasi:filesystem/types@0.2.0; 
+    import wasi:filesystem/preopens@0.2.0;
+    
+    // Restrict the standard socket interface
+    import wasi:sockets/tcp@0.2.0;
+    
     export run: func();
 }
 ```
 
-> **Note:** We use a "polyfill" approach with locally-defined interfaces that
-> mirror WASI behavior. This avoids registry dependency issues while
-> demonstrating the same capability-based security model.
+> **Implementation Note:** Our demo uses a "polyfill" approach with locally-defined 
+> interfaces (`sensor-fs`, `sensor-net`) that mirror the standard WASI behavior.
+> This avoids registry dependency issues while demonstrating the same 
+> capability-based security model that production WASI 0.2 implements.
 
 ### Host-Side Enforcement
 
