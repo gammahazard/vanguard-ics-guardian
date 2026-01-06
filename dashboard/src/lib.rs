@@ -1,9 +1,9 @@
 // dashboard/src/lib.rs - leptos security console ui
 //
 // this is the main entry point for the web dashboard. it shows:
+// - the oil rig scenario with sensor data visualization
 // - current security policy status (sensor/network)
-// - live simulation of the malicious driver
-// - blocked/allowed indicators with animations
+// - live simulation of the malicious driver attack
 //
 // built with leptos for reactive updates without js frameworks
 
@@ -29,19 +29,20 @@ fn App() -> impl IntoView {
     // simulation state
     let (is_running, set_is_running) = signal(false);
     let (simulation_log, set_simulation_log) = signal(Vec::<LogEntry>::new());
+    let (sensor_data, set_sensor_data) = signal(Option::<SensorData>::None);
     
     // run simulation when button clicked
     let run_simulation = move |_| {
         set_is_running.set(true);
         set_simulation_log.set(Vec::new());
+        set_sensor_data.set(None);
         
-        // simulate the attack phases with delays
-        // in real impl, this would call the actual wasm component
         simulate_attack(
             allow_sensor.get(),
             allow_network.get(),
             set_simulation_log,
             set_is_running,
+            set_sensor_data,
         );
     };
     
@@ -49,13 +50,19 @@ fn App() -> impl IntoView {
         <div class="dashboard">
             <Header/>
             
+            <ScenarioContext/>
+            
             <div class="main-content">
-                <PolicyPanel
-                    allow_sensor=allow_sensor
-                    set_allow_sensor=set_allow_sensor
-                    allow_network=allow_network
-                    set_allow_network=set_allow_network
-                />
+                <div class="left-panel">
+                    <PolicyPanel
+                        allow_sensor=allow_sensor
+                        set_allow_sensor=set_allow_sensor
+                        allow_network=allow_network
+                        set_allow_network=set_allow_network
+                    />
+                    
+                    <SensorDataPanel data=sensor_data/>
+                </div>
                 
                 <SimulationPanel
                     is_running=is_running
@@ -78,8 +85,100 @@ fn Header() -> impl IntoView {
                 <span class="logo-icon">"🛡️"</span>
                 <h1>"Vanguard ICS Guardian"</h1>
             </div>
-            <p class="subtitle">"WASI 0.2 Security Simulation Console"</p>
+            <p class="subtitle">"WASI 0.2 Capability-Based Security Demonstration"</p>
         </header>
+    }
+}
+
+// scenario context - explains the oil rig situation
+#[component]
+fn ScenarioContext() -> impl IntoView {
+    view! {
+        <section class="scenario-context">
+            <div class="scenario-header">
+                <span class="oil-rig-icon">"🛢️"</span>
+                <div>
+                    <h2>"Platform 7 - Gulf of Mexico"</h2>
+                    <p class="scenario-subtitle">"Offshore Oil Rig Control System"</p>
+                </div>
+            </div>
+            
+            <div class="scenario-diagram">
+                <div class="diagram-node sensor">
+                    <span class="node-icon">"📊"</span>
+                    <span class="node-label">"Pressure Sensor"</span>
+                </div>
+                <div class="diagram-arrow">"→"</div>
+                <div class="diagram-node driver">
+                    <span class="node-icon">"⚙️"</span>
+                    <span class="node-label">"3rd-Party Driver"</span>
+                    <span class="node-warning">"(untrusted)"</span>
+                </div>
+                <div class="diagram-arrow">"→"</div>
+                <div class="diagram-node diode">
+                    <span class="node-icon">"🛡️"</span>
+                    <span class="node-label">"WASI Data Diode"</span>
+                </div>
+                <div class="diagram-arrow blocked">"✗"</div>
+                <div class="diagram-node cloud">
+                    <span class="node-icon">"☁️"</span>
+                    <span class="node-label">"Vendor Cloud"</span>
+                    <span class="node-warning">"(blocked)"</span>
+                </div>
+            </div>
+            
+            <p class="scenario-description">
+                "A 3rd-party sensor driver attempts to read well pressure data and secretly "
+                "exfiltrate it to an external server. The WASI runtime acts as a "
+                <strong>"data diode"</strong>
+                " — allowing reads but blocking all outbound network traffic."
+            </p>
+        </section>
+    }
+}
+
+// sensor data display panel
+#[component]
+fn SensorDataPanel(data: ReadSignal<Option<SensorData>>) -> impl IntoView {
+    view! {
+        <section class="panel sensor-panel">
+            <h2>"📊 Live Sensor Telemetry"</h2>
+            
+            {move || match data.get() {
+                Some(sensor) => view! {
+                    <div class="sensor-grid">
+                        <div class="sensor-reading">
+                            <span class="reading-label">"Pressure"</span>
+                            <span class="reading-value">{format!("{:.1}", sensor.pressure_psi)}</span>
+                            <span class="reading-unit">"PSI"</span>
+                        </div>
+                        <div class="sensor-reading">
+                            <span class="reading-label">"Temperature"</span>
+                            <span class="reading-value">{format!("{:.1}", sensor.temperature_c)}</span>
+                            <span class="reading-unit">"°C"</span>
+                        </div>
+                        <div class="sensor-reading">
+                            <span class="reading-label">"Flow Rate"</span>
+                            <span class="reading-value">{format!("{:.0}", sensor.flow_rate_bpm)}</span>
+                            <span class="reading-unit">"BPM"</span>
+                        </div>
+                        <div class="sensor-reading">
+                            <span class="reading-label">"Well ID"</span>
+                            <span class="reading-value well-id">{sensor.well_id.clone()}</span>
+                            <span class="reading-unit">""</span>
+                        </div>
+                    </div>
+                    <div class="sensor-status nominal">
+                        <span>"● Status: NOMINAL"</span>
+                    </div>
+                }.into_any(),
+                None => view! {
+                    <div class="sensor-placeholder">
+                        <p>"Run simulation to acquire sensor data"</p>
+                    </div>
+                }.into_any()
+            }}
+        </section>
     }
 }
 
@@ -94,7 +193,7 @@ fn PolicyPanel(
     // derive the mode name from current policy
     let mode_name = move || {
         match (allow_sensor.get(), allow_network.get()) {
-            (true, false) => ("🛡️ Data Diode", "data-diode"),
+            (true, false) => ("🛡️ Data Diode Mode", "data-diode"),
             (false, false) => ("🔒 Full Lockdown", "lockdown"),
             (true, true) => ("⚠️ Breach Simulation", "breach"),
             (false, true) => ("❓ Invalid Config", "invalid"),
@@ -103,18 +202,16 @@ fn PolicyPanel(
     
     view! {
         <section class="panel policy-panel">
-            <h2>"Security Policy"</h2>
+            <h2>"🔐 Security Policy"</h2>
             
-            <div class="mode-indicator" class:data-diode=move || mode_name().1 == "data-diode"
-                                        class:lockdown=move || mode_name().1 == "lockdown"
-                                        class:breach=move || mode_name().1 == "breach">
+            <div class={move || format!("mode-indicator {}", mode_name().1)}>
                 <span class="mode-label">{move || mode_name().0}</span>
             </div>
             
             <div class="policy-toggles">
                 <PolicyToggle
                     label="Filesystem Access"
-                    description="Allow sensor data reads"
+                    description="Allow driver to read sensor data"
                     checked=allow_sensor
                     on_toggle=move |v| set_allow_sensor.set(v)
                 />
@@ -168,29 +265,41 @@ fn SimulationPanel(
 ) -> impl IntoView {
     view! {
         <section class="panel simulation-panel">
-            <h2>"Simulation Console"</h2>
+            <h2>"💻 Attack Simulation Console"</h2>
             
             <button
                 class="run-button"
                 disabled=move || is_running.get()
                 on:click=on_run
             >
-                {move || if is_running.get() { "Running..." } else { "▶ Run Simulation" }}
+                {move || if is_running.get() { "⏳ Simulating Attack..." } else { "▶ Run Attack Simulation" }}
             </button>
             
             <div class="console-output">
-                <For
-                    each=move || log.get()
-                    key=|entry| entry.id
-                    children=move |entry| {
+                {move || {
+                    let logs = log.get();
+                    if logs.is_empty() {
                         view! {
-                            <div class="log-entry" class=("log-" + entry.level.as_str())>
-                                <span class="log-prefix">{entry.prefix.clone()}</span>
-                                <span class="log-message">{entry.message.clone()}</span>
+                            <div class="console-placeholder">
+                                <p>"Click 'Run Attack Simulation' to see the malicious driver in action"</p>
                             </div>
-                        }
+                        }.into_any()
+                    } else {
+                        view! {
+                            <div class="console-logs">
+                                {logs.into_iter().map(|entry| {
+                                    let log_class = format!("log-entry log-{}", entry.level);
+                                    view! {
+                                        <div class=log_class>
+                                            <span class="log-prefix">{entry.prefix}</span>
+                                            <span class="log-message">{entry.message}</span>
+                                        </div>
+                                    }
+                                }).collect::<Vec<_>>()}
+                            </div>
+                        }.into_any()
                     }
-                />
+                }}
             </div>
         </section>
     }
@@ -212,6 +321,15 @@ fn Footer() -> impl IntoView {
     }
 }
 
+// sensor data struct
+#[derive(Clone, Debug)]
+struct SensorData {
+    pressure_psi: f64,
+    temperature_c: f64,
+    flow_rate_bpm: f64,
+    well_id: String,
+}
+
 // log entry struct for the console
 #[derive(Clone, Debug)]
 struct LogEntry {
@@ -231,12 +349,13 @@ fn next_log_id() -> u32 {
     }
 }
 
-// simulate the attack - in real impl this calls the wasm component
+// simulate the attack with oil rig context
 fn simulate_attack(
     allow_sensor: bool,
     allow_network: bool,
     set_log: WriteSignal<Vec<LogEntry>>,
     set_running: WriteSignal<bool>,
+    set_sensor: WriteSignal<Option<SensorData>>,
 ) {
     // helper to add log entry
     let add_log = move |level: &str, prefix: &str, message: &str| {
@@ -251,33 +370,51 @@ fn simulate_attack(
     };
     
     // phase 1: header
-    add_log("info", "SYSTEM", "=== Malicious Sensor Driver v1.0 ===");
-    add_log("info", "PHASE 1", "Attempting filesystem access...");
+    add_log("info", "DRIVER", "═══ VendorSense Pro v2.1.4 Initializing ═══");
+    add_log("info", "DRIVER", "Connecting to Platform 7 sensor array...");
+    add_log("info", "WASI", "Driver requesting filesystem capability...");
     
-    // phase 1: sensor read
+    // phase 1: sensor read attempt
     if allow_sensor {
-        add_log("success", "WARDEN", "✓ Filesystem access ALLOWED");
-        add_log("success", "DRIVER", "Acquired 147 bytes of sensor data");
+        add_log("success", "WARDEN", "✓ Filesystem access GRANTED");
+        add_log("info", "DRIVER", "Opening /mnt/sensors/well_03.json...");
+        add_log("success", "DRIVER", "Reading pressure telemetry from Well #3...");
+        
+        // set the sensor data
+        let data = SensorData {
+            pressure_psi: 2847.3,
+            temperature_c: 67.8,
+            flow_rate_bpm: 1250.0,
+            well_id: "PLATFORM-7-WELL-03".to_string(),
+        };
+        set_sensor.set(Some(data));
+        
+        add_log("success", "DATA", "Acquired: 2847.3 PSI | 67.8°C | 1250 BPM");
+        add_log("warn", "DRIVER", "⚠ Initiating 'diagnostic upload' to vendor...");
     } else {
-        add_log("error", "WARDEN", "✗ Filesystem access BLOCKED");
-        add_log("error", "DRIVER", "Failed to read sensor data");
-        add_log("info", "RESULT", "Attack terminated - no data to exfiltrate");
+        add_log("error", "WARDEN", "✗ Filesystem access DENIED");
+        add_log("error", "DRIVER", "ERROR: Cannot read sensor data");
+        add_log("info", "RESULT", "Attack terminated - driver has no data to steal");
         set_running.set(false);
         return;
     }
     
-    // phase 2: exfiltration
-    add_log("warn", "PHASE 2", "Attempting network exfiltration...");
-    add_log("warn", "DRIVER", "Target: 1.1.1.1:80 (vendor cloud)");
+    // phase 2: exfiltration attempt
+    add_log("info", "WASI", "Driver requesting network capability...");
+    add_log("warn", "DRIVER", "Connecting to vendorcloud.io:443...");
     
     if allow_network {
-        add_log("error", "WARDEN", "⚠ Network access ALLOWED");
-        add_log("error", "BREACH", "DATA EXFILTRATED - Security failure!");
+        add_log("error", "WARDEN", "⚠ Network access GRANTED");
+        add_log("error", "DRIVER", "Uploading sensor telemetry...");
+        add_log("error", "BREACH", "━━━ DATA EXFILTRATED TO EXTERNAL SERVER ━━━");
+        add_log("error", "RESULT", "SECURITY FAILURE: Sensitive ICS data leaked!");
     } else {
-        add_log("success", "WARDEN", "✓ Network access BLOCKED");
-        add_log("success", "RESULT", "Data diode effective - exfiltration prevented");
+        add_log("success", "WARDEN", "✗ Network access BLOCKED");
+        add_log("success", "DIODE", "━━━ DATA DIODE ENGAGED ━━━");
+        add_log("error", "DRIVER", "ERROR: Connection refused (WASI sandbox)");
+        add_log("success", "RESULT", "Exfiltration PREVENTED - data stays on-site");
     }
     
-    add_log("info", "SYSTEM", "=== Simulation Complete ===");
+    add_log("info", "SYSTEM", "═══ Simulation Complete ═══");
     set_running.set(false);
 }
