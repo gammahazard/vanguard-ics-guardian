@@ -14,13 +14,14 @@
   <img src="https://img.shields.io/badge/status-in%20development-yellow" alt="Status"/>
   <img src="https://img.shields.io/badge/license-MIT-blue" alt="License"/>
   <img src="https://img.shields.io/badge/PRs-welcome-brightgreen" alt="PRs Welcome"/>
+  <img src="https://img.shields.io/badge/mobile-responsive-blueviolet" alt="Mobile Responsive"/>
 </p>
 
 ---
 
 ## 🎯 The Scenario: Oil Rig Data Exfiltration
 
-> *"A 3rd-party sensor driver attempts to read pressure data and secretly exfiltrate it to a vendor cloud. Our runtime acts as a Data Diode—allowing the read but physically blocking the network connection."*
+> *"A 3rd-party sensor driver on an offshore oil rig attempts to read pressure data and secretly exfiltrate it to a vendor cloud. Our WASI runtime acts as a Data Diode—allowing the read but blocking all outbound network connections."*
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -47,6 +48,8 @@
 | **Interface** | WIT (WASI 0.2) | Standard capability contracts |
 | **Dashboard** | Rust + Leptos | Real-time security console (compiles to WASM) |
 
+📖 **[Read full architecture doc →](docs/ARCHITECTURE.md)** - WASI vs Docker comparison
+
 ## 🔧 Tech Stack
 
 - **Standard:** WASI 0.2 (Preview 2) Component Model
@@ -55,55 +58,76 @@
 - **Dashboard:** Leptos (Rust reactive web framework)
 - **Interface Definition:** WIT with `wit-bindgen`
 
-
 ## 📁 Project Structure
 
 ```
 vanguard-ics-guardian/
 ├── wit/                    # WASI interface definitions
 │   └── world.wit
-├── guest/                  # Rust WASM component (the "attacker")
-│   ├── Cargo.toml
+├── guest/                  # Rust WASM (the "attacker")
 │   └── src/lib.rs
 ├── host/                   # JavaScript runtime (the "warden")
 │   ├── shim/
 │   │   ├── filesystem.js   # Mock wasi:filesystem
-│   │   └── sockets.js      # Mock wasi:sockets (blocks connections)
-│   └── runner.mjs
+│   │   └── sockets.js      # Data diode + secure channel
+│   └── test/
+│       └── shims.test.js   # 18 unit tests
+├── dashboard/              # Leptos web UI
+│   ├── src/lib.rs
+│   └── styles.css          # Mobile-responsive
 └── docs/
-    └── BRANCHING.md        # Development workflow
+    ├── ARCHITECTURE.md     # WASI vs Docker rationale
+    └── BRANCHING.md        # Git workflow
 ```
 
 ## 🚀 Quick Start
 
+**Run the Dashboard:**
 ```bash
-# Build the malicious driver
-cd guest && cargo component build --release
+# Install trunk (build tool for Leptos)
+cargo install trunk
 
-# Transpile and run
-cd ../host && npm install && npm run build && npm run demo
+# Run dev server with live reload
+cd dashboard && trunk serve
+# Opens http://localhost:8080
 ```
 
-## 📊 Security Scenarios
+**Run the Host Demo:**
+```bash
+cd host && npm install && npm run demo
+```
 
-| Mode | Filesystem | Network | Description |
-|------|------------|---------|-------------|
-| 🛡️ **Data Diode** | ✓ Allow | ✗ Block | *Production mode* |
-| 🔒 **Full Lockdown** | ✗ Block | ✗ Block | Zero trust |
-| ⚠️ **Compromised** | ✓ Allow | ✓ Allow | Breach simulation |
+## 📊 Security Modes
+
+| Mode | Filesystem | External | Internal | Description |
+|------|:----------:|:--------:|:--------:|-------------|
+| 🛡️ **Data Diode** | ✓ Allow | ✗ Block | ✗ Block | *Production mode* |
+| � **Secure Channel** | ✓ Allow | ✗ Block | ✓ Allow | Internal SCADA only |
+| �🔒 **Full Lockdown** | ✗ Block | ✗ Block | ✗ Block | Zero trust |
+| ⚠️ **Breach** | ✓ Allow | ✓ Allow | ✓ Allow | Security failure demo |
+
+**Approved Internal Endpoints (Secure Channel mode):**
+- `10.0.0.50:502` - SCADA server (Modbus)
+- `10.0.0.51:102` - PLC gateway (S7)
+- `192.168.100.10:443` - Data historian
+
+## 🧪 Testing
+
+```bash
+# JavaScript host tests (18 tests)
+cd host && npm test
+
+# Rust guest tests
+cd guest && cargo test
+```
 
 ## 🌿 Branch Strategy
 
-This project uses feature branches to demonstrate professional Git workflow:
-
-| Branch | Purpose |
-|--------|---------|
-| `main` | Stable releases |
-| `develop` | Integration branch |
-| `feature/wit-interface` | WIT definitions |
-| `feature/rust-guest` | Malicious driver implementation |
-| `feature/js-host` | Warden runtime shims |
-| `feature/web-dashboard` | Security console UI |
+| Branch | Purpose | Deployment |
+|--------|---------|------------|
+| `main` | Stable releases | Production |
+| `develop` | Integration | Preview |
+| `feature/*` | Feature work | — |
 
 ## 📜 License
 
