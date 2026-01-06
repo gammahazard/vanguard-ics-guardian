@@ -164,6 +164,8 @@ For offshore oil rigs with limited satellite connectivity (~1 Mbps):
 
 *This is why WASI matters for remote ICS environments.*
 
+> 💡 **Future-Ready:** As AI/ML systems increasingly need to consume OT data at scale, WASI's microsecond cold-start and KB-sized components position it as the ideal secure data pipeline backbone—maintaining IEC 62443's read-only security model while enabling high-volume analytics.
+
 ## 🧪 Verification & Testing
 
 This project includes a comprehensive test suite using **Vitest** to verify the security invariants of the WASI shim. We test the Host implementation directly to ensure permissions are enforced *before* the Guest code even runs.
