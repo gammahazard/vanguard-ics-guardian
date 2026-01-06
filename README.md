@@ -139,11 +139,13 @@ This project demonstrates key principles from the **IEC 62443** industrial cyber
 
 For offshore oil rigs with limited satellite connectivity (~1 Mbps):
 
-| Package | Docker (~500 MB) | WASI (~200 KB) |
+| Package | Docker (~500 MB) | WASI (~15 KB)* |
 |---------|:----------------:|:--------------:|
-| **Download Time** | ~67 minutes | ~1.6 seconds |
+| **Download Time** | ~67 minutes | **~0.12 seconds** |
 | **Network Impact** | Saturates link | Negligible |
 | **Failover Speed** | Minutes | Milliseconds |
+
+*\*Actual measured size of our compiled malicious-driver component: **14.7 KB***
 
 *This is why WASI matters for remote ICS environments.*
 
