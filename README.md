@@ -71,19 +71,23 @@ Protects against **SolarWinds-style** supply chain attacks.
 
 ```
 vanguard-ics-guardian/
-├── wit/                    # WASI interface definitions
-│   └── world.wit
-├── guest/                  # Rust WASM (the "attacker")
-│   └── src/lib.rs
+├── wit/                    # Polyfill WIT interface definitions
+│   └── world.wit           # sensor-fs, sensor-net, sensor-utils
+├── guest/                  # Rust WASM component (14.7 KB!)
+│   └── src/lib.rs          # The "attacker" with narration
 ├── host/                   # JavaScript runtime (the "warden")
 │   ├── shim/
-│   │   ├── filesystem.js   # Mock wasi:filesystem
+│   │   ├── filesystem.js   # Mock filesystem capabilities
 │   │   └── sockets.js      # Data diode + secure channel
 │   └── test/
 │       └── shims.test.js   # 18 unit tests
 ├── dashboard/              # Leptos web UI
-│   ├── src/lib.rs
+│   ├── src/lib.rs          # Reactive security console
 │   └── styles.css          # Mobile-responsive
+├── legacy/                 # Docker "villains" for comparison
+│   ├── minimal.Dockerfile  # ~200 MB (pyserial)
+│   ├── full.Dockerfile     # ~800 MB (pandas, numpy)
+│   └── ml.Dockerfile       # ~2 GB (tensorflow)
 └── docs/
     ├── ARCHITECTURE.md     # WASI vs Docker rationale
     └── BRANCHING.md        # Git workflow
