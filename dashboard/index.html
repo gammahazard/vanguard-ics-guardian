@@ -27,24 +27,52 @@
     <!-- copy wasm assets to dist -->
     <link data-trunk rel="copy-dir" href="assets" />
 
-    <!-- leptos mounts the app here -->
-    <!-- trunk will inject the wasm loader script -->
-    <link data-trunk rel="rust" data-wasm-opt="z" />
+    <!-- Create wasmGuest stub SYNCHRONOUSLY before any async scripts run -->
+    <!-- This ensures window.wasmGuest exists immediately when Leptos calls it -->
+    <script>
+        // Create a promise that resolves when the real module loads
+        window._wasmGuestReady = new Promise(function (resolve) {
+            window._wasmGuestResolve = resolve;
+        });
+        // Stub that waits for real implementation
+        window.wasmGuest = {
+            run: function (options) {
+                return window._wasmGuestReady.then(function () {
+                    return window._wasmGuestReal.run(options);
+                });
+            },
+            setFsPolicy: function (allow) {
+                window._wasmGuestReady.then(function () {
+                    window._wasmGuestReal.setFsPolicy(allow);
+                });
+            },
+            setNetPolicy: function (allow) {
+                window._wasmGuestReady.then(function () {
+                    window._wasmGuestReal.setNetPolicy(allow);
+                });
+            }
+        };
+    </script>
 
-    <!-- Load the WASM guest runner and expose to window for Leptos -->
+    <!-- Load the real WASM guest runner (module scripts are deferred) -->
     <script type="module">
         import { runGuest, setFsPolicy, setNetPolicy } from './assets/wasm/runner.js';
 
-        // Expose API to window for Leptos wasm_bindgen interop
-        window.wasmGuest = {
+        // Store real implementation and resolve the waiting promise
+        window._wasmGuestReal = {
             run: runGuest,
             setFsPolicy,
             setNetPolicy
         };
+        window._wasmGuestResolve();
 
-        // Dispatch event when ready
+        // Also dispatch event for any other listeners
         window.dispatchEvent(new CustomEvent('wasm-guest-ready'));
     </script>
+
+    <!-- leptos mounts the app here -->
+    <!-- trunk will inject the wasm loader script -->
+    <link data-trunk rel="rust" data-wasm-opt="z" />
 </body>
 
 </html>
