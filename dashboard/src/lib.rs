@@ -71,6 +71,8 @@ fn App() -> impl IntoView {
                 />
             </div>
             
+            <DeploymentPanel/>
+            
             <Footer/>
         </div>
     }
@@ -321,6 +323,117 @@ fn Footer() -> impl IntoView {
     }
 }
 
+// deployment comparison panel - shows Docker vs WASI
+#[component]
+fn DeploymentPanel() -> impl IntoView {
+    let (is_deploying, set_is_deploying) = signal(false);
+    let (docker_progress, set_docker_progress) = signal(0);
+    let (wasi_progress, set_wasi_progress) = signal(0);
+    let (deploy_complete, set_deploy_complete) = signal(false);
+    
+    let run_deployment = move |_| {
+        set_is_deploying.set(true);
+        set_deploy_complete.set(false);
+        set_docker_progress.set(0);
+        set_wasi_progress.set(0);
+        
+        // simulate deployment - WASI is much faster
+        simulate_deployment(
+            set_docker_progress,
+            set_wasi_progress,
+            set_is_deploying,
+            set_deploy_complete,
+        );
+    };
+    
+    view! {
+        <section class="panel deployment-panel">
+            <h2>"🚀 Deployment Comparison: Docker vs WASI"</h2>
+            
+            <p class="deployment-desc">
+                "Simulating driver update deployment to edge device"
+            </p>
+            
+            <button
+                class="run-button deploy-button"
+                disabled=move || is_deploying.get()
+                on:click=run_deployment
+            >
+                {move || if is_deploying.get() { "⏳ Deploying..." } else { "▶ Deploy Driver Update" }}
+            </button>
+            
+            <div class="deployment-comparison">
+                <div class="deploy-column docker">
+                    <div class="deploy-header">
+                        <span class="deploy-icon">"🐳"</span>
+                        <span class="deploy-title">"Docker + Python"</span>
+                    </div>
+                    <div class="deploy-metrics">
+                        <div class="metric">
+                            <span class="metric-label">"Image Size"</span>
+                            <span class="metric-value">"~500 MB"</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">"Cold Start"</span>
+                            <span class="metric-value">"~5 sec"</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">"Memory"</span>
+                            <span class="metric-value">"~150 MB"</span>
+                        </div>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-bar docker-bar" style={move || format!("width: {}%", docker_progress.get())}></div>
+                    </div>
+                    <div class="deploy-status">
+                        {move || if docker_progress.get() >= 100 { "✓ Complete" } else if docker_progress.get() > 0 { "Pulling layers..." } else { "Ready" }}
+                    </div>
+                </div>
+                
+                <div class="deploy-column wasi">
+                    <div class="deploy-header">
+                        <span class="deploy-icon">"⚡"</span>
+                        <span class="deploy-title">"WASI Component"</span>
+                    </div>
+                    <div class="deploy-metrics">
+                        <div class="metric">
+                            <span class="metric-label">"Component Size"</span>
+                            <span class="metric-value good">"~200 KB"</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">"Cold Start"</span>
+                            <span class="metric-value good">"~8 ms"</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">"Memory"</span>
+                            <span class="metric-value good">"~2 MB"</span>
+                        </div>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-bar wasi-bar" style={move || format!("width: {}%", wasi_progress.get())}></div>
+                    </div>
+                    <div class="deploy-status">
+                        {move || if wasi_progress.get() >= 100 { "✓ Complete" } else if wasi_progress.get() > 0 { "Loading..." } else { "Ready" }}
+                    </div>
+                </div>
+            </div>
+            
+            {move || if deploy_complete.get() {
+                view! {
+                    <div class="deploy-result">
+                        <p>"⚡ WASI deployed "</p>
+                        <strong>"2500x smaller"</strong>
+                        <p>" and "</p>
+                        <strong>"625x faster"</strong>
+                    </div>
+                }.into_any()
+            } else {
+                view! { <div></div> }.into_any()
+            }}
+        </section>
+    }
+}
+
 // sensor data struct
 #[derive(Clone, Debug)]
 struct SensorData {
@@ -418,3 +531,29 @@ fn simulate_attack(
     add_log("info", "SYSTEM", "═══ Simulation Complete ═══");
     set_running.set(false);
 }
+
+// simulate deployment comparison - WASI is much faster
+fn simulate_deployment(
+    set_docker: WriteSignal<i32>,
+    set_wasi: WriteSignal<i32>,
+    set_deploying: WriteSignal<bool>,
+    set_complete: WriteSignal<bool>,
+) {
+    // WASI completes almost instantly (simulated with quick progress)
+    // Docker takes much longer (simulated with slow progress)
+    
+    // Immediately start WASI at high progress
+    set_wasi.set(50);
+    
+    // Docker starts slow
+    set_docker.set(5);
+    
+    // Simulate the remaining progress
+    // In a real app, we'd use set_timeout or async
+    // For now, just set the final states
+    set_wasi.set(100);
+    set_docker.set(100);
+    set_deploying.set(false);
+    set_complete.set(true);
+}
+

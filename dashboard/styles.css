@@ -516,6 +516,141 @@ input:checked+.toggle-slider::before {
   color: var(--accent-red);
 }
 
+/* ---- deployment panel ---- */
+.deployment-panel {
+  margin-top: 1.5rem;
+  background: linear-gradient(135deg, #1a1a28 0%, #201a2e 100%);
+  border-color: var(--accent-purple);
+}
+
+.deployment-desc {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.deploy-button {
+  background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+}
+
+.deployment-comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.deploy-column {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  border: 1px solid var(--bg-hover);
+}
+
+.deploy-column.docker {
+  border-color: rgba(0, 170, 255, 0.3);
+}
+
+.deploy-column.wasi {
+  border-color: rgba(0, 255, 136, 0.3);
+  background: rgba(0, 255, 136, 0.03);
+}
+
+.deploy-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.deploy-icon {
+  font-size: 1.5rem;
+}
+
+.deploy-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.deploy-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+
+.metric {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+}
+
+.metric-label {
+  color: var(--text-secondary);
+}
+
+.metric-value {
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+}
+
+.metric-value.good {
+  color: var(--accent-green);
+  font-weight: 600;
+}
+
+.progress-container {
+  height: 8px;
+  background: var(--bg-primary);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.progress-bar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease-out;
+}
+
+.docker-bar {
+  background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
+}
+
+.wasi-bar {
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-blue));
+}
+
+.deploy-status {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.deploy-result {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: rgba(0, 255, 136, 0.1);
+  border-radius: var(--radius-md);
+  color: var(--accent-green);
+  font-size: 0.9rem;
+}
+
+.deploy-result strong {
+  color: white;
+}
+
+@media (max-width: 600px) {
+  .deployment-comparison {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ---- footer ---- */
 .footer {
   text-align: center;
