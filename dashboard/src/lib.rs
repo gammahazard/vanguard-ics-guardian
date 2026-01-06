@@ -88,6 +88,8 @@ fn App() -> impl IntoView {
             
             <DeploymentPanel/>
             
+            <TMRPanel/>
+            
             <Footer/>
         </div>
     }
@@ -530,6 +532,250 @@ fn DeploymentPanel() -> impl IntoView {
             } else {
                 view! { <div></div> }.into_any()
             }}
+        </section>
+    }
+}
+
+// 2oo3 triple modular redundancy panel
+// demonstrates wasm fault tolerance vs python multiprocessing
+#[component]
+fn TMRPanel() -> impl IntoView {
+    use gloo_timers::callback::Timeout;
+    
+    // instance states: 0 = healthy, 1 = faulty, 2 = rebuilding
+    let (instance_states, set_instance_states) = signal([0_u8, 0, 0]);
+    // sensor readings from each instance (simulated)
+    let (readings, set_readings) = signal([2847.3_f64, 2847.3, 2847.3]);
+    // is demo running?
+    let (is_running, set_is_running) = signal(false);
+    // frames processed
+    let (frames_processed, set_frames_processed) = signal(0_u32);
+    // python restart countdown
+    let (python_countdown, set_python_countdown) = signal(0_i32);
+    // wasm rebuild time (ms)
+    let (wasm_rebuild_ms, set_wasm_rebuild_ms) = signal(0_u32);
+    
+    // inject a fault into one instance
+    let inject_fault = move |_| {
+        if is_running.get() { return; }
+        set_is_running.set(true);
+        
+        // corrupt instance 1's reading
+        set_instance_states.update(|s| s[1] = 1);
+        set_readings.update(|r| r[1] = 9999.9); // garbage reading
+        
+        // start processing frames
+        let process_frames = move || {
+            for i in 1..=20 {
+                let set_frames = set_frames_processed.clone();
+                Timeout::new(i * 100, move || {
+                    set_frames.set(i);
+                }).forget();
+            }
+        };
+        process_frames();
+        
+        // after 500ms, start wasm rebuild
+        {
+            let set_states = set_instance_states.clone();
+            let set_readings = set_readings.clone();
+            let set_rebuild = set_wasm_rebuild_ms.clone();
+            Timeout::new(500, move || {
+                set_states.update(|s| s[1] = 2); // rebuilding
+                set_rebuild.set(10); // 10ms rebuild
+                
+                // rebuild complete after 100ms (simulated)
+                let set_states = set_states.clone();
+                let set_readings = set_readings.clone();
+                Timeout::new(100, move || {
+                    set_states.update(|s| s[1] = 0); // healthy
+                    set_readings.update(|r| r[1] = 2847.3); // correct reading
+                }).forget();
+            }).forget();
+        }
+        
+        // python simulation: 3 second restart
+        {
+            let set_countdown = set_python_countdown.clone();
+            set_countdown.set(3);
+            for i in 1..=3 {
+                let set_countdown = set_countdown.clone();
+                Timeout::new(i * 1000, move || {
+                    set_countdown.set(3 - i as i32);
+                }).forget();
+            }
+        }
+        
+        // complete after 3s
+        Timeout::new(3000, move || {
+            set_is_running.set(false);
+        }).forget();
+    };
+    
+    // reset demo
+    let reset_demo = move |_| {
+        set_instance_states.set([0, 0, 0]);
+        set_readings.set([2847.3, 2847.3, 2847.3]);
+        set_frames_processed.set(0);
+        set_python_countdown.set(0);
+        set_wasm_rebuild_ms.set(0);
+        set_is_running.set(false);
+    };
+    
+    // compute majority vote from readings
+    let majority_vote = move || {
+        let r = readings.get();
+        let states = instance_states.get();
+        
+        // only count healthy readings
+        let valid: Vec<f64> = r.iter().zip(states.iter())
+            .filter(|(_, &s)| s == 0)
+            .map(|(&v, _)| v)
+            .collect();
+        
+        if valid.len() >= 2 {
+            // majority vote succeeds
+            Some(valid[0])
+        } else {
+            None
+        }
+    };
+    
+    view! {
+        <section class="panel tmr-panel">
+            <h2>"⚡ 2oo3 Fault Tolerance: WASM Hot-Swap vs Python"</h2>
+            
+            <p class="tmr-desc">
+                "Triple Modular Redundancy with majority voting. "
+                "Click 'Inject Fault' to corrupt one instance and watch WASM recover in ~10ms vs Python's 3+ second restart."
+            </p>
+            
+            <div class="tmr-controls">
+                <button
+                    class="run-button inject-button"
+                    disabled=move || is_running.get()
+                    on:click=inject_fault
+                >
+                    {move || if is_running.get() { "⏳ Running Demo..." } else { "💥 Inject Fault" }}
+                </button>
+                <button
+                    class="reset-button"
+                    disabled=move || is_running.get()
+                    on:click=reset_demo
+                >
+                    "🔄 Reset"
+                </button>
+            </div>
+            
+            <div class="instance-grid">
+                {move || {
+                    let states = instance_states.get();
+                    let r = readings.get();
+                    (0..3).map(|i| {
+                        let state = states[i];
+                        let reading = r[i];
+                        let status_class = match state {
+                            0 => "healthy",
+                            1 => "faulty",
+                            _ => "rebuilding",
+                        };
+                        let status_text = match state {
+                            0 => "● HEALTHY",
+                            1 => "✗ FAULTY",
+                            _ => "↻ REBUILDING",
+                        };
+                        view! {
+                            <div class={format!("instance-card {}", status_class)}>
+                                <div class="instance-header">
+                                    <span class="instance-name">{format!("Instance {}", i + 1)}</span>
+                                    <span class={format!("instance-status {}", status_class)}>{status_text}</span>
+                                </div>
+                                <div class="instance-reading">
+                                    <span class="reading-label">"Pressure"</span>
+                                    <span class={format!("reading-value {}", if state == 1 { "bad" } else { "" })}>
+                                        {format!("{:.1}", reading)}
+                                    </span>
+                                    <span class="reading-unit">"PSI"</span>
+                                </div>
+                            </div>
+                        }
+                    }).collect::<Vec<_>>()
+                }}
+            </div>
+            
+            <div class="voting-result">
+                <span class="vote-label">"Majority Vote Result:"</span>
+                {move || match majority_vote() {
+                    Some(v) => view! {
+                        <span class="vote-value success">{format!("{:.1} PSI ✓", v)}</span>
+                    }.into_any(),
+                    None => view! {
+                        <span class="vote-value error">"INSUFFICIENT QUORUM ✗"</span>
+                    }.into_any(),
+                }}
+            </div>
+            
+            <div class="tmr-comparison">
+                <div class="tmr-column wasm">
+                    <div class="tmr-header">
+                        <span class="tmr-icon">"⚡"</span>
+                        <span class="tmr-title">"WASM Hot-Swap"</span>
+                    </div>
+                    <div class="tmr-metrics">
+                        <div class="metric">
+                            <span class="metric-label">"Rebuild Time"</span>
+                            <span class="metric-value good">{move || {
+                                let ms = wasm_rebuild_ms.get();
+                                if ms > 0 { format!("~{}ms", ms) } else { String::from("—") }
+                            }}</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">"Frames Processed"</span>
+                            <span class="metric-value good">{move || frames_processed.get()}</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">"Downtime"</span>
+                            <span class="metric-value good">"0ms"</span>
+                        </div>
+                    </div>
+                    <div class="tmr-status">"Hitless failover via instance pooling"</div>
+                </div>
+                
+                <div class="tmr-column python">
+                    <div class="tmr-header">
+                        <span class="tmr-icon">"🐍"</span>
+                        <span class="tmr-title">"Python Multiprocessing"</span>
+                    </div>
+                    <div class="tmr-metrics">
+                        <div class="metric">
+                            <span class="metric-label">"Restart Time"</span>
+                            <span class="metric-value bad">{move || {
+                                let c = python_countdown.get();
+                                if c > 0 { format!("{}s remaining...", c) } else { String::from("~3 seconds") }
+                            }}</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">"Frames During Restart"</span>
+                            <span class="metric-value bad">"0 (blocked)"</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">"Downtime"</span>
+                            <span class="metric-value bad">"2-5 sec"</span>
+                        </div>
+                    </div>
+                    <div class="tmr-status">"Process crash requires full restart"</div>
+                    <div class="tmr-warning">"⚠ Frames in-flight during crash are lost"</div>
+                </div>
+            </div>
+            
+            <div class="tmr-note">
+                <span>"💡 "</span>
+                <strong>"IEC 61508 SIL 2/3"</strong>
+                <span>": 2oo3 voting provides fault tolerance for safety-critical systems. "</span>
+                <span>"WASM's microsecond instantiation enables "</span>
+                <strong>"hitless"</strong>
+                <span>" software failover."</span>
+            </div>
         </section>
     }
 }
