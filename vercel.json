@@ -1,5 +1,5 @@
 {
-    "buildCommand": "cd dashboard && cargo install trunk && trunk build --release",
+    "buildCommand": ". $HOME/.cargo/env && cargo install trunk && cd dashboard && trunk build --release",
     "outputDirectory": "dashboard/dist",
     "framework": null,
     "installCommand": "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && . $HOME/.cargo/env && rustup target add wasm32-unknown-unknown",
