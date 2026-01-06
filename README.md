@@ -117,8 +117,8 @@ cd host && npm install && npm run demo
 | Mode | Filesystem | External | Internal | Description |
 |------|:----------:|:--------:|:--------:|-------------|
 | 🛡️ **Data Diode** | ✓ Allow | ✗ Block | ✗ Block | *Production mode* |
-| � **Secure Channel** | ✓ Allow | ✗ Block | ✓ Allow | Internal SCADA only |
-| �🔒 **Full Lockdown** | ✗ Block | ✗ Block | ✗ Block | Zero trust |
+| 🔗 **Secure Channel** | ✓ Allow | ✗ Block | ✓ Allow | Internal SCADA only |
+| 🔒 **Full Lockdown** | ✗ Block | ✗ Block | ✗ Block | Zero trust |
 | ⚠️ **Breach** | ✓ Allow | ✓ Allow | ✓ Allow | Security failure demo |
 
 **Approved Internal Endpoints (Secure Channel mode):**

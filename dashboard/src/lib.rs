@@ -184,7 +184,8 @@ fn SensorDataPanel(data: ReadSignal<Option<SensorData>>) -> impl IntoView {
     }
 }
 
-// policy control panel - toggles for sensor/network access
+// policy control panel - mode selector for security policy
+// now uses a dropdown instead of toggles for clearer mode selection
 #[component]
 fn PolicyPanel(
     allow_sensor: ReadSignal<bool>,
@@ -192,13 +193,32 @@ fn PolicyPanel(
     allow_network: ReadSignal<bool>,
     set_allow_network: WriteSignal<bool>,
 ) -> impl IntoView {
-    // derive the mode name from current policy
-    let mode_name = move || {
-        match (allow_sensor.get(), allow_network.get()) {
-            (true, false) => ("🛡️ Data Diode Mode", "data-diode"),
-            (false, false) => ("🔒 Full Lockdown", "lockdown"),
-            (true, true) => ("⚠️ Breach Simulation", "breach"),
-            (false, true) => ("❓ Invalid Config", "invalid"),
+    // mode state: 0=Data Diode, 1=Secure Channel, 2=Full Lockdown, 3=Breach
+    let (mode_idx, set_mode_idx) = signal(0_usize);
+    
+    // derive mode info from index
+    let mode_info = move || {
+        match mode_idx.get() {
+            0 => ("🛡️ Data Diode Mode", "data-diode", "Sensor: ✓ | Network: ✗ | Read data, block all egress"),
+            1 => ("🔗 Secure Channel", "secure-channel", "Sensor: ✓ | Network: Whitelist | Only approved SCADA endpoints"),
+            2 => ("🔒 Full Lockdown", "lockdown", "Sensor: ✗ | Network: ✗ | Zero trust - all I/O blocked"),
+            _ => ("⚠️ Breach Simulation", "breach", "Sensor: ✓ | Network: ✓ | Security failure demo"),
+        }
+    };
+    
+    // update actual policy when mode changes
+    let on_mode_change = move |ev: web_sys::Event| {
+        use web_sys::HtmlSelectElement;
+        let target = event_target::<HtmlSelectElement>(&ev);
+        let idx = target.selected_index() as usize;
+        set_mode_idx.set(idx);
+        
+        // update the actual policy signals
+        match idx {
+            0 => { set_allow_sensor.set(true); set_allow_network.set(false); } // Data Diode
+            1 => { set_allow_sensor.set(true); set_allow_network.set(false); } // Secure Channel (same for simulation)
+            2 => { set_allow_sensor.set(false); set_allow_network.set(false); } // Lockdown
+            _ => { set_allow_sensor.set(true); set_allow_network.set(true); } // Breach
         }
     };
     
@@ -206,34 +226,43 @@ fn PolicyPanel(
         <section class="panel policy-panel">
             <h2>"🔐 Security Policy"</h2>
             
-            <div class={move || format!("mode-indicator {}", mode_name().1)}>
-                <span class="mode-label">{move || mode_name().0}</span>
+            <div class={move || format!("mode-indicator {}", mode_info().1)}>
+                <span class="mode-label">{move || mode_info().0}</span>
             </div>
             
-            <div class="policy-toggles">
-                <PolicyToggle
-                    label="Filesystem Access"
-                    description="Allow driver to read sensor data"
-                    checked=allow_sensor
-                    on_toggle=move |v| set_allow_sensor.set(v)
-                />
-                
-                <PolicyToggle
-                    label="Network Access"
-                    description="Block untrusted egress (exfiltration attempts)"
-                    checked=allow_network
-                    on_toggle=move |v| set_allow_network.set(v)
-                />
+            <div class="mode-selector">
+                <label>"Select security mode:"</label>
+                <select on:change=on_mode_change>
+                    <option selected>"🛡️ Data Diode — Block all outbound"</option>
+                    <option>"🔗 Secure Channel — Whitelist only"</option>
+                    <option>"🔒 Full Lockdown — Zero trust"</option>
+                    <option>"⚠️ Breach — All access (demo)"</option>
+                </select>
             </div>
             
-            <p class="policy-note">
-                "💡 Network toggle controls "
-                <strong>"outbound"</strong>
-                " connections only. Trusted updates arrive via secure side-channel."
-            </p>
+            <div class="mode-description">
+                <p>{move || mode_info().2}</p>
+            </div>
+            
+            {move || if mode_idx.get() == 1 {
+                view! {
+                    <div class="whitelist-info">
+                        <p>"📋 Approved endpoints:"</p>
+                        <ul>
+                            <li>"10.0.0.50:502 (SCADA Modbus)"</li>
+                            <li>"10.0.0.51:102 (PLC Gateway)"</li>
+                            <li>"192.168.100.10:443 (Historian)"</li>
+                        </ul>
+                    </div>
+                }.into_any()
+            } else {
+                view! { <div></div> }.into_any()
+            }}
         </section>
     }
 }
+
+// Note: PolicyToggle component kept for potential future use but not currently used
 
 // individual toggle switch component
 #[component]
@@ -271,6 +300,21 @@ fn SimulationPanel(
     log: ReadSignal<Vec<LogEntry>>,
     on_run: impl Fn(web_sys::MouseEvent) + 'static,
 ) -> impl IntoView {
+    // ref to console div for auto-scroll
+    let console_ref = NodeRef::<leptos::html::Div>::new();
+    
+    // auto-scroll effect: whenever logs change, scroll console to bottom
+    Effect::new(move |_| {
+        // trigger on log changes
+        let logs = log.get();
+        if !logs.is_empty() {
+            // scroll to bottom of console
+            if let Some(element) = console_ref.get() {
+                element.set_scroll_top(element.scroll_height());
+            }
+        }
+    });
+    
     view! {
         <section class="panel simulation-panel">
             <h2>"💻 Attack Simulation Console"</h2>
@@ -283,7 +327,7 @@ fn SimulationPanel(
                 {move || if is_running.get() { "⏳ Simulating Attack..." } else { "▶ Run Attack Simulation" }}
             </button>
             
-            <div class="console-output">
+            <div class="console-output" node_ref=console_ref>
                 {move || {
                     let logs = log.get();
                     if logs.is_empty() {
@@ -375,7 +419,9 @@ fn DeploymentPanel() -> impl IntoView {
         set_docker_progress.set(0);
         set_wasi_progress.set(0);
         
+        // pass the selected package index for proportional timing
         simulate_deployment(
+            selected_package.get(),
             set_docker_progress,
             set_wasi_progress,
             set_is_deploying,
@@ -404,6 +450,8 @@ fn DeploymentPanel() -> impl IntoView {
             
             <p class="deployment-desc">
                 "Simulating deployment over 1 Mbps satellite link (offshore rig)"
+                <br/>
+                <small>"⏱️ Animation accelerated for demo — real deployments: minutes to hours"</small>
             </p>
             
             <button
@@ -531,23 +579,13 @@ struct SensorData {
 // log entry struct for the console
 #[derive(Clone, Debug)]
 struct LogEntry {
-    id: u32,
     level: String,
     prefix: String,
     message: String,
 }
 
-// counter for unique log ids
-static mut LOG_ID: u32 = 0;
-
-fn next_log_id() -> u32 {
-    unsafe {
-        LOG_ID += 1;
-        LOG_ID
-    }
-}
-
 // simulate the attack with oil rig context
+// uses staggered timing for dramatic effect - logs appear progressively like a real terminal
 fn simulate_attack(
     allow_sensor: bool,
     allow_network: bool,
@@ -555,11 +593,16 @@ fn simulate_attack(
     set_running: WriteSignal<bool>,
     set_sensor: WriteSignal<Option<SensorData>>,
 ) {
+    use gloo_timers::callback::Timeout;
+    
+    // timing constants for dramatic effect
+    const LOG_DELAY: u32 = 200;        // ms between log entries
+    const PAUSE_BEFORE_DECISION: u32 = 500; // dramatic pause before network decision
+    
     // helper to add log entry
     let add_log = move |level: &str, prefix: &str, message: &str| {
         set_log.update(|logs| {
             logs.push(LogEntry {
-                id: next_log_id(),
                 level: level.to_string(),
                 prefix: prefix.to_string(),
                 message: message.to_string(),
@@ -567,59 +610,230 @@ fn simulate_attack(
         });
     };
     
-    // phase 1: header
-    add_log("info", "DRIVER", "═══ VendorSense Pro v2.1.4 Initializing ═══");
-    add_log("info", "DRIVER", "Connecting to Platform 7 sensor array...");
-    add_log("info", "WASI", "Driver requesting filesystem capability...");
+    // build the sequence of log entries with their delays
+    let mut delay: u32 = 0;
     
-    // phase 1: sensor read attempt
+    // phase 1: initialization
+    {
+        let add_log = add_log.clone();
+        Timeout::new(delay, move || {
+            add_log("info", "DRIVER", "═══ VendorSense Pro v2.1.4 Initializing ═══");
+        }).forget();
+    }
+    delay += LOG_DELAY;
+    
+    {
+        let add_log = add_log.clone();
+        Timeout::new(delay, move || {
+            add_log("info", "DRIVER", "Connecting to Platform 7 sensor array...");
+        }).forget();
+    }
+    delay += LOG_DELAY;
+    
+    {
+        let add_log = add_log.clone();
+        Timeout::new(delay, move || {
+            add_log("info", "WASI", "Driver requesting filesystem capability...");
+        }).forget();
+    }
+    delay += LOG_DELAY;
+    
+    // phase 2: filesystem access decision
     if allow_sensor {
-        add_log("success", "WARDEN", "✓ Filesystem access GRANTED");
-        add_log("info", "DRIVER", "Opening /mnt/sensors/well_03.json...");
-        add_log("success", "DRIVER", "Reading pressure telemetry from Well #3...");
+        {
+            let add_log = add_log.clone();
+            Timeout::new(delay, move || {
+                add_log("success", "WARDEN", "✓ Filesystem access GRANTED");
+            }).forget();
+        }
+        delay += LOG_DELAY;
         
-        // set the sensor data
-        let data = SensorData {
-            pressure_psi: 2847.3,
-            temperature_c: 67.8,
-            flow_rate_bpm: 1250.0,
-            well_id: "PLATFORM-7-WELL-03".to_string(),
-        };
-        set_sensor.set(Some(data));
+        {
+            let add_log = add_log.clone();
+            Timeout::new(delay, move || {
+                add_log("info", "DRIVER", "Opening /mnt/sensors/well_03.json...");
+            }).forget();
+        }
+        delay += LOG_DELAY;
         
-        add_log("success", "DATA", "Acquired: 2847.3 PSI | 67.8°C | 1250 BPM");
-        add_log("warn", "DRIVER", "⚠ Initiating 'diagnostic upload' to vendor...");
+        {
+            let add_log = add_log.clone();
+            Timeout::new(delay, move || {
+                add_log("success", "DRIVER", "Reading pressure telemetry from Well #3...");
+            }).forget();
+        }
+        delay += LOG_DELAY;
+        
+        // set sensor data
+        {
+            let set_sensor = set_sensor.clone();
+            Timeout::new(delay, move || {
+                let data = SensorData {
+                    pressure_psi: 2847.3,
+                    temperature_c: 67.8,
+                    flow_rate_bpm: 1250.0,
+                    well_id: "PLATFORM-7-WELL-03".to_string(),
+                };
+                set_sensor.set(Some(data));
+            }).forget();
+        }
+        
+        {
+            let add_log = add_log.clone();
+            Timeout::new(delay, move || {
+                add_log("success", "DATA", "Acquired: 2847.3 PSI | 67.8°C | 1250 BPM");
+            }).forget();
+        }
+        delay += LOG_DELAY;
+        
+        {
+            let add_log = add_log.clone();
+            Timeout::new(delay, move || {
+                add_log("warn", "DRIVER", "⚠ Initiating 'diagnostic upload' to vendor...");
+            }).forget();
+        }
+        delay += LOG_DELAY;
+        
+        // phase 3: network exfiltration attempt
+        {
+            let add_log = add_log.clone();
+            Timeout::new(delay, move || {
+                add_log("info", "WASI", "Driver requesting network capability...");
+            }).forget();
+        }
+        delay += LOG_DELAY;
+        
+        {
+            let add_log = add_log.clone();
+            Timeout::new(delay, move || {
+                add_log("warn", "DRIVER", "Connecting to vendorcloud.io:443...");
+            }).forget();
+        }
+        delay += LOG_DELAY;
+        
+        // dramatic pause before the critical decision
+        delay += PAUSE_BEFORE_DECISION;
+        
+        // phase 4: network access decision (the dramatic moment!)
+        if allow_network {
+            // breach scenario
+            {
+                let add_log = add_log.clone();
+                Timeout::new(delay, move || {
+                    add_log("error", "WARDEN", "⚠ Network access GRANTED");
+                }).forget();
+            }
+            delay += LOG_DELAY;
+            
+            {
+                let add_log = add_log.clone();
+                Timeout::new(delay, move || {
+                    add_log("error", "DRIVER", "Uploading sensor telemetry...");
+                }).forget();
+            }
+            delay += LOG_DELAY;
+            
+            {
+                let add_log = add_log.clone();
+                Timeout::new(delay, move || {
+                    add_log("breach", "BREACH", "━━━ DATA EXFILTRATED TO EXTERNAL SERVER ━━━");
+                }).forget();
+            }
+            delay += LOG_DELAY;
+            
+            {
+                let add_log = add_log.clone();
+                Timeout::new(delay, move || {
+                    add_log("error", "RESULT", "SECURITY FAILURE: Sensitive ICS data leaked!");
+                }).forget();
+            }
+            delay += LOG_DELAY;
+        } else {
+            // data diode engaged - blocked!
+            {
+                let add_log = add_log.clone();
+                Timeout::new(delay, move || {
+                    add_log("success", "WARDEN", "✗ Network access BLOCKED");
+                }).forget();
+            }
+            delay += LOG_DELAY;
+            
+            {
+                let add_log = add_log.clone();
+                Timeout::new(delay, move || {
+                    add_log("diode", "DIODE", "━━━ DATA DIODE ENGAGED ━━━");
+                }).forget();
+            }
+            delay += LOG_DELAY;
+            
+            {
+                let add_log = add_log.clone();
+                Timeout::new(delay, move || {
+                    add_log("error", "DRIVER", "ERROR: Connection refused (WASI sandbox)");
+                }).forget();
+            }
+            delay += LOG_DELAY;
+            
+            {
+                let add_log = add_log.clone();
+                Timeout::new(delay, move || {
+                    add_log("success", "RESULT", "Exfiltration PREVENTED - data stays on-site");
+                }).forget();
+            }
+            delay += LOG_DELAY;
+        }
+        
+        // final message
+        {
+            let add_log = add_log.clone();
+            Timeout::new(delay, move || {
+                add_log("info", "SYSTEM", "═══ Simulation Complete ═══");
+            }).forget();
+        }
+        delay += LOG_DELAY;
+        
+        // mark simulation complete
+        Timeout::new(delay, move || {
+            set_running.set(false);
+        }).forget();
+        
     } else {
-        add_log("error", "WARDEN", "✗ Filesystem access DENIED");
-        add_log("error", "DRIVER", "ERROR: Cannot read sensor data");
-        add_log("info", "RESULT", "Attack terminated - driver has no data to steal");
-        set_running.set(false);
-        return;
+        // filesystem denied - early exit
+        {
+            let add_log = add_log.clone();
+            Timeout::new(delay, move || {
+                add_log("error", "WARDEN", "✗ Filesystem access DENIED");
+            }).forget();
+        }
+        delay += LOG_DELAY;
+        
+        {
+            let add_log = add_log.clone();
+            Timeout::new(delay, move || {
+                add_log("error", "DRIVER", "ERROR: Cannot read sensor data");
+            }).forget();
+        }
+        delay += LOG_DELAY;
+        
+        {
+            let add_log = add_log.clone();
+            Timeout::new(delay, move || {
+                add_log("info", "RESULT", "Attack terminated - driver has no data to steal");
+            }).forget();
+        }
+        delay += LOG_DELAY;
+        
+        Timeout::new(delay, move || {
+            set_running.set(false);
+        }).forget();
     }
-    
-    // phase 2: exfiltration attempt
-    add_log("info", "WASI", "Driver requesting network capability...");
-    add_log("warn", "DRIVER", "Connecting to vendorcloud.io:443...");
-    
-    if allow_network {
-        add_log("error", "WARDEN", "⚠ Network access GRANTED");
-        add_log("error", "DRIVER", "Uploading sensor telemetry...");
-        add_log("error", "BREACH", "━━━ DATA EXFILTRATED TO EXTERNAL SERVER ━━━");
-        add_log("error", "RESULT", "SECURITY FAILURE: Sensitive ICS data leaked!");
-    } else {
-        add_log("success", "WARDEN", "✗ Network access BLOCKED");
-        add_log("success", "DIODE", "━━━ DATA DIODE ENGAGED ━━━");
-        add_log("error", "DRIVER", "ERROR: Connection refused (WASI sandbox)");
-        add_log("success", "RESULT", "Exfiltration PREVENTED - data stays on-site");
-    }
-    
-    add_log("info", "SYSTEM", "═══ Simulation Complete ═══");
-    set_running.set(false);
 }
 
 // simulate deployment comparison - WASI is much faster
-// uses set_timeout to animate progress bars with realistic timing
+// uses set_timeout to animate progress bars with PROPORTIONAL timing based on package size
+// timing is accelerated for demo purposes (real deployments would take minutes to hours)
 fn simulate_deployment(
+    package_idx: usize,
     set_docker: WriteSignal<i32>,
     set_wasi: WriteSignal<i32>,
     set_deploying: WriteSignal<bool>,
@@ -627,27 +841,37 @@ fn simulate_deployment(
 ) {
     use gloo_timers::callback::Timeout;
     
-    // WASI completes in ~500ms (near instant for small component)
-    // Docker takes ~3000ms (to simulate slow container pull)
+    // Proportional timing based on package size
+    // Docker timing scales from 2s (PLC) to 6s (Full System)
+    // WASI timing scales from 300ms (PLC) to 1000ms (Full System)
+    let (docker_total_ms, wasi_total_ms): (u32, u32) = match package_idx {
+        0 => (2000, 300),   // PLC Firmware: smallest
+        1 => (3000, 400),   // Sensor Driver 
+        2 => (4000, 500),   // Edge Analytics
+        3 => (5000, 700),   // SCADA Patch
+        _ => (6000, 1000),  // Full System: largest
+    };
     
-    // Animate WASI (fast - 10 steps over 500ms = 50ms per step)
+    // Animate WASI (fast - 10 steps)
+    let wasi_step_ms = wasi_total_ms / 10;
     for i in 1..=10 {
         let set_wasi = set_wasi.clone();
-        Timeout::new((i * 50) as u32, move || {
-            set_wasi.set(i * 10);
+        Timeout::new(i * wasi_step_ms, move || {
+            set_wasi.set((i * 10) as i32);
         }).forget();
     }
     
-    // Animate Docker (slow - 10 steps over 3000ms = 300ms per step)
+    // Animate Docker (slow - 10 steps)
+    let docker_step_ms = docker_total_ms / 10;
     for i in 1..=10 {
         let set_docker = set_docker.clone();
-        Timeout::new((i * 300) as u32, move || {
-            set_docker.set(i * 10);
+        Timeout::new(i * docker_step_ms, move || {
+            set_docker.set((i * 10) as i32);
         }).forget();
     }
     
-    // Complete after Docker finishes (3000ms)
-    Timeout::new(3100, move || {
+    // Complete after Docker finishes
+    Timeout::new(docker_total_ms + 100, move || {
         set_deploying.set(false);
         set_complete.set(true);
     }).forget();

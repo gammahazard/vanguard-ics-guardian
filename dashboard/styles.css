@@ -119,8 +119,7 @@ body {
   border-radius: var(--radius-lg);
   padding: 1.25rem;
   margin-bottom: 1.5rem;
-  border: 1px solid var(--accent-blue);
-  border-opacity: 0.3;
+  border: 1px solid rgba(0, 170, 255, 0.3);
 }
 
 .scenario-header {
@@ -241,8 +240,7 @@ body {
 /* ---- sensor data panel ---- */
 .sensor-panel {
   background: linear-gradient(135deg, #1a2a1a 0%, #1a1a24 100%);
-  border-color: var(--accent-green);
-  border-opacity: 0.3;
+  border: 1px solid rgba(0, 255, 136, 0.3);
 }
 
 /* ---- policy panel note ---- */
@@ -348,9 +346,84 @@ body {
   background: rgba(255, 68, 68, 0.1);
 }
 
+.mode-indicator.secure-channel {
+  border-left-color: var(--accent-yellow);
+  background: rgba(255, 170, 0, 0.08);
+}
+
 .mode-label {
   font-size: 1rem;
   font-weight: 600;
+}
+
+/* ---- mode selector (dropdown) ---- */
+.mode-selector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.mode-selector label {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.mode-selector select {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border: 1px solid var(--bg-hover);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  font-family: inherit;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s;
+  min-width: 200px;
+}
+
+.mode-selector select:hover,
+.mode-selector select:focus {
+  border-color: var(--accent-blue);
+}
+
+.mode-description {
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  text-align: center;
+  margin-bottom: 0.75rem;
+}
+
+.whitelist-info {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(255, 170, 0, 0.08);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--accent-yellow);
+  font-size: 0.8rem;
+}
+
+.whitelist-info p {
+  margin: 0 0 0.5rem 0;
+  color: var(--accent-yellow);
+  font-weight: 500;
+}
+
+.whitelist-info ul {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: var(--text-secondary);
+}
+
+.whitelist-info li {
+  margin: 0.25rem 0;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
 }
 
 /* ---- toggle switches ---- */
@@ -530,6 +603,70 @@ input:checked+.toggle-slider::before {
 
 .log-error .log-message {
   color: var(--accent-red);
+}
+
+/* special diode engaged styling - dramatic flash animation */
+.log-entry.log-diode {
+  background: rgba(0, 255, 136, 0.15);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.75rem;
+  margin: 0.25rem 0;
+  animation: diodeFlash 0.6s ease-out;
+}
+
+.log-diode .log-prefix {
+  color: var(--accent-green);
+  font-weight: 700;
+}
+
+.log-diode .log-message {
+  color: var(--accent-green);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+/* special breach styling - warning flash */
+.log-entry.log-breach {
+  background: rgba(255, 68, 68, 0.15);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.75rem;
+  margin: 0.25rem 0;
+  animation: breachFlash 0.6s ease-out;
+}
+
+.log-breach .log-prefix {
+  color: var(--accent-red);
+  font-weight: 700;
+}
+
+.log-breach .log-message {
+  color: var(--accent-red);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+@keyframes diodeFlash {
+  0% {
+    background: rgba(0, 255, 136, 0.5);
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
+  }
+
+  100% {
+    background: rgba(0, 255, 136, 0.15);
+    box-shadow: none;
+  }
+}
+
+@keyframes breachFlash {
+  0% {
+    background: rgba(255, 68, 68, 0.5);
+    box-shadow: 0 0 20px rgba(255, 68, 68, 0.4);
+  }
+
+  100% {
+    background: rgba(255, 68, 68, 0.15);
+    box-shadow: none;
+  }
 }
 
 /* ---- deployment panel ---- */
