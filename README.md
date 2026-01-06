@@ -138,17 +138,19 @@ cd guest && cargo test
 
 ## 🏭 IEC 62443 Alignment
 
-This project demonstrates key principles from the **IEC 62443** industrial cybersecurity standard:
+This project demonstrates key principles from the **IEC 62443** industrial cybersecurity standard, mapped to the **Purdue Model**:
 
-| IEC 62443 Principle | Our Implementation |
-|---------------------|-------------------|
-| **Zone & Conduit Model** | OT zone (sensors) isolated from IT/Cloud via data diode |
-| **Defense in Depth** | WASI capability model adds runtime-level security layer |
-| **Least Privilege** | Components only receive explicitly granted capabilities |
-| **Secure by Default** | Network access denied unless specifically allowed |
-| **Unidirectional Gateways** | Data Diode mode: read IN, block OUT |
+| IEC 62443 Principle | Our Implementation | Code Reference |
+|---------------------|-------------------|----------------|
+| **Zone & Conduit Model** | OT zone (L0-2) isolated from IT (L4-5) via data diode | [`sockets.js`](host/shim/sockets.js) |
+| **Unidirectional Gateway** | Data Diode: read IN from sensors, block OUT to cloud | [`sockets.js`](host/shim/sockets.js) |
+| **Defense in Depth** | WASI capability model adds runtime-level security | [`filesystem.js`](host/shim/filesystem.js) |
+| **Least Privilege** | Components only receive explicitly granted capabilities | WIT interface definitions |
+| **Secure by Default** | Network access denied unless specifically whitelisted | Policy config in shims |
 
-> ⚠️ **Note:** This is a demonstration/simulation, not a certified IEC 62443 product. Formal compliance requires third-party assessment.
+> 📖 **[Read full architecture doc →](docs/ARCHITECTURE.md)** - Includes Purdue Model diagram and zone mapping
+
+> ⚠️ **Note:** This is a demonstration of IEC 62443 concepts, not a certified implementation. Formal compliance requires third-party assessment.
 
 ## 📡 Bandwidth Reality: Remote Deployments
 

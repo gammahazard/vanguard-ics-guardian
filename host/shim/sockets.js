@@ -2,17 +2,28 @@
 // wasi:sockets shim - capability-based network layer
 // ============================================================
 //
-// this file implements the wasi:sockets interfaces with a
-// sophisticated security model that goes beyond simple blocking:
+// IEC 62443 ROLE: This file IS the "Conduit" between security zones.
 //
-// security modes:
-// - data diode: block ALL outbound connections (default)
-// - secure channel: allow ONLY approved internal endpoints
-// - breach simulation: allow everything (shows what could happen)
+// In IEC 62443 terms:
+// - OT Zone (Purdue Levels 0-2): Sensors, PLCs, SCADA systems
+// - IT Zone (Purdue Levels 4-5): Enterprise, Cloud, Vendors
+// - Conduit: The enforcement point controlling data flow
 //
-// the approved endpoints feature demonstrates that wasi security
-// isn't just about blocking everything - it's about precise control
-// over which capabilities are granted to untrusted code.
+// Our implementation enforces UNIDIRECTIONAL flow (Data Diode):
+// - Data can flow FROM OT zone (sensors) → allowed
+// - Data cannot flow TO IT zone (cloud exfiltration) → blocked
+//
+// This is the core IEC 62443 security primitive: zone isolation
+// with controlled conduits for necessary data exchange.
+//
+// Security Modes:
+// - Data Diode: block ALL outbound connections (default)
+// - Secure Channel: allow ONLY approved OT endpoints (L1-2)
+// - Breach Simulation: allow everything (shows compromise)
+//
+// The approved endpoints prove WASI security isn't just blocking
+// everything - it's precise control over which capabilities are
+// granted to untrusted code running in the OT zone.
 // ============================================================
 
 // ------------------------------------------------------------
