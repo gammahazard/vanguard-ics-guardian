@@ -17,6 +17,18 @@
 package vanguard:containment@0.1.0;
 
 // ------------------------------------------------------------
+// sensor-utils: logging and utility capabilities
+// ------------------------------------------------------------
+// allows the guest to communicate its actions to the host console.
+// this makes the "struggle" of blocked malware visible to viewers.
+//
+interface sensor-utils {
+    // print a message to the host console
+    // the host controls how (and whether) this is displayed
+    log: func(msg: string);
+}
+
+// ------------------------------------------------------------
 // sensor-fs: represents filesystem capabilities
 // ------------------------------------------------------------
 // this mirrors wasi:filesystem behavior:
@@ -47,8 +59,9 @@ interface sensor-net {
 // ------------------------------------------------------------
 world ics-guardian {
     // import capabilities the guest wants
-    import sensor-fs;
-    import sensor-net;
+    import sensor-utils;  // logging - so guest can narrate
+    import sensor-fs;     // filesystem access
+    import sensor-net;    // network access (blocked by data diode)
     
     // export the entry point the host calls
     export run: func();
