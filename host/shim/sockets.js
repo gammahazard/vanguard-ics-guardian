@@ -1,49 +1,73 @@
 // ============================================================
-// wasi:sockets shim - the "data diode" network layer
+// wasi:sockets shim - capability-based network layer
 // ============================================================
 //
-// this file implements the wasi:sockets interfaces that the
-// guest component imports. this is where the "data diode"
-// security model is enforced.
+// this file implements the wasi:sockets interfaces with a
+// sophisticated security model that goes beyond simple blocking:
 //
-// the data diode concept:
-// - information can flow IN (sensor reads) but not OUT (network)
-// - we ALWAYS block tcp connections, regardless of destination
-// - this prevents any data exfiltration, even by malicious code
+// security modes:
+// - data diode: block ALL outbound connections (default)
+// - secure channel: allow ONLY approved internal endpoints
+// - breach simulation: allow everything (shows what could happen)
 //
-// in real ics environments, data diodes are physical hardware.
-// we're simulating this in software with our warden runtime.
+// the approved endpoints feature demonstrates that wasi security
+// isn't just about blocking everything - it's about precise control
+// over which capabilities are granted to untrusted code.
 // ============================================================
 
 // ------------------------------------------------------------
 // security policy configuration
 // ------------------------------------------------------------
-// this controls whether network access is allowed.
-// for true data diode operation, this should always be false.
 
 export const policy = {
-    allowNetwork: false,  // block all network access (data diode mode)
+    // master network toggle - false = pure data diode
+    allowNetwork: false,
+
+    // allow connections to approved endpoints only
+    // this simulates a "secure channel" where data can flow
+    // to internal scada servers but not external cloud
+    allowApprovedEndpoints: false,
+
+    // whitelist of approved internal endpoints
+    // format: "ip:port" strings
+    approvedEndpoints: [
+        "10.0.0.50:502",      // internal scada server (modbus)
+        "10.0.0.51:102",      // internal plc gateway (s7comm)
+        "192.168.100.10:443", // on-site data historian
+    ],
 };
+
+// ------------------------------------------------------------
+// helper: check if address is in approved list
+// ------------------------------------------------------------
+
+function isApprovedEndpoint(address) {
+    const formatted = formatAddress(address);
+    // extract just ip:port without protocol
+    const ipPort = formatted.replace(/^.*:\/\//, '');
+
+    for (const approved of policy.approvedEndpoints) {
+        if (ipPort === approved || formatted.includes(approved)) {
+            return true;
+        }
+    }
+    return false;
+}
 
 // ------------------------------------------------------------
 // wasi:sockets/network implementation
 // ------------------------------------------------------------
-// provides network-level types and the instance network
 
 export function instanceNetwork() {
-    // return a network handle that the guest can use
-    // all network operations will go through this
     return new Network();
 }
 
 class Network {
-    // the network resource - represents the host's network stack
     constructor() {
-        // nothing to initialize - we just need an object to pass around
+        // nothing to initialize
     }
 }
 
-// ip address types (simplified)
 export const IpAddressFamily = {
     ipv4: 'ipv4',
     ipv6: 'ipv6',
@@ -52,64 +76,62 @@ export const IpAddressFamily = {
 // ------------------------------------------------------------
 // wasi:sockets/tcp implementation
 // ------------------------------------------------------------
-// implements the tcp-socket resource and its methods.
-// key security feature: start-connect() returns connection-refused.
 
 export class TcpSocket {
     #addressFamily;
 
-    // constructor is called via TcpSocket.new() in the guest
     constructor(addressFamily) {
         this.#addressFamily = addressFamily;
     }
 
-    // new: create a new tcp socket
-    // in real wasi, this would allocate a socket resource
     static new(addressFamily) {
-        // we allow socket creation - it's the connection we block
         console.log(`[WARDEN] tcp socket created (family: ${addressFamily})`);
         return { tag: 'ok', val: new TcpSocket(addressFamily) };
     }
 
-    // start-connect: begin an async tcp connection
-    // THIS IS WHERE WE BLOCK THE DATA DIODE
+    // start-connect: this is where security decisions happen
     startConnect(network, remoteAddress) {
-        // extract the address for logging
         const addr = formatAddress(remoteAddress);
+        const isApproved = isApprovedEndpoint(remoteAddress);
 
-        // security check: is network access allowed?
-        if (!policy.allowNetwork) {
-            // this is the data diode in action!
-            // we refuse all outbound connections
-            console.log(`[WARDEN] ✗ BLOCKED: tcp connection to ${addr}`);
-            console.log(`[WARDEN]   reason: data diode policy - no outbound connections`);
+        // mode 1: full network access (breach simulation)
+        if (policy.allowNetwork) {
+            console.log(`[WARDEN] ⚠ ALLOWED: connection to ${addr}`);
+            console.log(`[WARDEN]   warning: data diode is DISABLED`);
+            return { tag: 'ok', val: undefined };
+        }
+
+        // mode 2: secure channel - approved endpoints only
+        if (policy.allowApprovedEndpoints && isApproved) {
+            console.log(`[WARDEN] ✓ SECURE CHANNEL: connection to ${addr}`);
+            console.log(`[WARDEN]   endpoint is on approved whitelist`);
+            return { tag: 'ok', val: undefined };
+        }
+
+        // mode 3: data diode - block everything
+        if (policy.allowApprovedEndpoints && !isApproved) {
+            console.log(`[WARDEN] ✗ BLOCKED: connection to ${addr}`);
+            console.log(`[WARDEN]   reason: endpoint not on approved whitelist`);
             return { tag: 'err', val: 'connection-refused' };
         }
 
-        // if somehow network is allowed (breach simulation mode)
-        console.log(`[WARDEN] ⚠ ALLOWED: tcp connection to ${addr}`);
-        console.log(`[WARDEN]   warning: data diode is DISABLED`);
-        return { tag: 'ok', val: undefined };
+        // default: pure data diode - block all
+        console.log(`[WARDEN] ✗ BLOCKED: connection to ${addr}`);
+        console.log(`[WARDEN]   reason: data diode policy - no outbound connections`);
+        return { tag: 'err', val: 'connection-refused' };
     }
 
-    // finish-connect: complete the async connection
-    // returns input/output streams for data transfer
     finishConnect() {
-        // if we got here, startConnect succeeded (breach mode)
-        // in normal operation, we never reach this
-        if (!policy.allowNetwork) {
+        if (!policy.allowNetwork && !policy.allowApprovedEndpoints) {
             return { tag: 'err', val: 'connection-refused' };
         }
-
-        // in breach mode, return mock streams
-        console.log('[WARDEN] ⚠ connection established - data may leak!');
+        console.log('[WARDEN] connection established');
         return {
             tag: 'ok',
             val: [new MockInputStream(), new MockOutputStream()]
         };
     }
 
-    // start-bind: bind socket to a local address
     startBind(network, localAddress) {
         if (!policy.allowNetwork) {
             return { tag: 'err', val: 'access' };
@@ -117,7 +139,6 @@ export class TcpSocket {
         return { tag: 'ok', val: undefined };
     }
 
-    // finish-bind: complete the bind operation
     finishBind() {
         if (!policy.allowNetwork) {
             return { tag: 'err', val: 'access' };
@@ -136,7 +157,6 @@ function formatAddress(socketAddress) {
         const addr = v4.address;
         const port = v4.port;
 
-        // handle tuple format (a, b, c, d) or array format [a, b, c, d]
         if (Array.isArray(addr)) {
             return `${addr.join('.')}:${port}`;
         } else if (typeof addr === 'object') {
@@ -148,9 +168,8 @@ function formatAddress(socketAddress) {
 }
 
 // ------------------------------------------------------------
-// mock streams (only used in breach simulation mode)
+// mock streams (for allowed connections)
 // ------------------------------------------------------------
-// these are simplified versions of wasi:io/streams types
 
 class MockInputStream {
     read(len) {
@@ -160,7 +179,7 @@ class MockInputStream {
 
 class MockOutputStream {
     write(data) {
-        console.log(`[WARDEN] ⚠ data written: ${data.length} bytes`);
+        console.log(`[WARDEN] data written: ${data.length} bytes`);
         return { tag: 'ok', val: BigInt(data.length) };
     }
 }
@@ -168,7 +187,6 @@ class MockOutputStream {
 // ------------------------------------------------------------
 // error codes
 // ------------------------------------------------------------
-// these match the wasi:sockets/network error-code enum
 
 export const ErrorCode = {
     connectionRefused: 'connection-refused',
@@ -176,5 +194,4 @@ export const ErrorCode = {
     connectionAborted: 'connection-aborted',
     accessDenied: 'access',
     timeout: 'timeout',
-    // ... other error codes
 };
