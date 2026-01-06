@@ -31,6 +31,7 @@ main ─────────────────────────
 | `feature/js-host` | `develop` | JavaScript host shims | `develop` |
 | `feature/web-dashboard` | `develop` | Security console UI | `develop` |
 | `feature/secure-channel` | `develop` | Approved endpoints whitelist | `develop` |
+| `feature/polyfill-legacy` | `develop` | Polyfill WIT + Docker comparison | `develop` |
 
 ## Workflow
 

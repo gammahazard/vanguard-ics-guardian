@@ -31,6 +31,11 @@ Startup Time: 2-10 seconds
 Attack Surface: Massive (entire Linux userland)
 ```
 
+> **Verifiable:** See `legacy/` folder for example Dockerfiles that build to these sizes.
+> - `minimal.Dockerfile` → ~200 MB (pyserial + pymodbus)
+> - `full.Dockerfile` → ~800 MB (pandas, numpy, scipy)
+> - `ml.Dockerfile` → ~2 GB (tensorflow, onnx)
+
 **Limitations:**
 - Containers isolate at the namespace level, not the capability level
 - A compromised container can still access network unless explicitly blocked
