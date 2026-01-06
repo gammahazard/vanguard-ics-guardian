@@ -32,6 +32,7 @@ main ─────────────────────────
 | `feature/web-dashboard` | `develop` | Security console UI | `develop` |
 | `feature/secure-channel` | `develop` | Approved endpoints whitelist | `develop` |
 | `feature/polyfill-legacy` | `develop` | Polyfill WIT + Docker comparison | `develop` |
+| `feature/deployment-simulation` | `develop` | Realistic animated progress bars | `develop` |
 
 ## Workflow
 
