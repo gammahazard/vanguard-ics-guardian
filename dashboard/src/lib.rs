@@ -323,13 +323,21 @@ fn Footer() -> impl IntoView {
     }
 }
 
-// deployment comparison panel - shows Docker vs WASI
+// deployment comparison panel - shows Docker vs WASI with package selector
 #[component]
 fn DeploymentPanel() -> impl IntoView {
     let (is_deploying, set_is_deploying) = signal(false);
     let (docker_progress, set_docker_progress) = signal(0);
     let (wasi_progress, set_wasi_progress) = signal(0);
     let (deploy_complete, set_deploy_complete) = signal(false);
+    let (selected_package, set_selected_package) = signal(0_usize); // 0=minimal, 1=full, 2=ml
+    
+    // package size scenarios: (name, docker_mb, wasi_kb, docker_start_sec, wasi_start_ms)
+    let packages = vec![
+        ("Minimal Sensor Driver", 200, 15, 3, 5),      // our actual measured WASM
+        ("Full Processing Suite", 800, 500, 8, 50),   // with data processing
+        ("ML Inference Engine", 2000, 5000, 15, 200), // tensorflow/onnx
+    ];
     
     let run_deployment = move |_| {
         set_is_deploying.set(true);
@@ -337,7 +345,6 @@ fn DeploymentPanel() -> impl IntoView {
         set_docker_progress.set(0);
         set_wasi_progress.set(0);
         
-        // simulate deployment - WASI is much faster
         simulate_deployment(
             set_docker_progress,
             set_wasi_progress,
@@ -350,8 +357,21 @@ fn DeploymentPanel() -> impl IntoView {
         <section class="panel deployment-panel">
             <h2>"🚀 Deployment Comparison: Docker vs WASI"</h2>
             
+            <div class="package-selector">
+                <label>"Select package type:"</label>
+                <select on:change=move |ev| {
+                    use web_sys::HtmlSelectElement;
+                    let target = event_target::<HtmlSelectElement>(&ev);
+                    set_selected_package.set(target.selected_index() as usize);
+                }>
+                    <option selected>"🔧 Minimal Sensor Driver (15 KB)"</option>
+                    <option>"📊 Full Processing Suite (500 KB)"</option>
+                    <option>"🤖 ML Inference Engine (5 MB)"</option>
+                </select>
+            </div>
+            
             <p class="deployment-desc">
-                "Simulating driver update deployment to edge device"
+                "Simulating deployment over 1 Mbps satellite link (offshore rig)"
             </p>
             
             <button
@@ -371,15 +391,29 @@ fn DeploymentPanel() -> impl IntoView {
                     <div class="deploy-metrics">
                         <div class="metric">
                             <span class="metric-label">"Image Size"</span>
-                            <span class="metric-value">"~500 MB"</span>
+                            <span class="metric-value">{move || {
+                                let pkg = &packages[selected_package.get()];
+                                format!("~{} MB", pkg.1)
+                            }}</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">"Download @ 1Mbps"</span>
+                            <span class="metric-value">{move || {
+                                let pkg = &packages[selected_package.get()];
+                                let seconds = (pkg.1 * 8) as f64; // MB to seconds at 1 Mbps
+                                if seconds > 60.0 {
+                                    format!("~{:.0} min", seconds / 60.0)
+                                } else {
+                                    format!("~{:.0} sec", seconds)
+                                }
+                            }}</span>
                         </div>
                         <div class="metric">
                             <span class="metric-label">"Cold Start"</span>
-                            <span class="metric-value">"~5 sec"</span>
-                        </div>
-                        <div class="metric">
-                            <span class="metric-label">"Memory"</span>
-                            <span class="metric-value">"~150 MB"</span>
+                            <span class="metric-value">{move || {
+                                let pkg = &packages[selected_package.get()];
+                                format!("~{} sec", pkg.3)
+                            }}</span>
                         </div>
                     </div>
                     <div class="progress-container">
@@ -398,15 +432,33 @@ fn DeploymentPanel() -> impl IntoView {
                     <div class="deploy-metrics">
                         <div class="metric">
                             <span class="metric-label">"Component Size"</span>
-                            <span class="metric-value good">"~200 KB"</span>
+                            <span class="metric-value good">{move || {
+                                let pkg = &packages[selected_package.get()];
+                                if pkg.2 >= 1000 {
+                                    format!("~{} MB", pkg.2 / 1000)
+                                } else {
+                                    format!("~{} KB", pkg.2)
+                                }
+                            }}</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">"Download @ 1Mbps"</span>
+                            <span class="metric-value good">{move || {
+                                let pkg = &packages[selected_package.get()];
+                                let seconds = (pkg.2 as f64 * 8.0) / 1000.0; // KB to seconds at 1 Mbps
+                                if seconds < 1.0 {
+                                    format!("~{:.1} sec", seconds)
+                                } else {
+                                    format!("~{:.0} sec", seconds)
+                                }
+                            }}</span>
                         </div>
                         <div class="metric">
                             <span class="metric-label">"Cold Start"</span>
-                            <span class="metric-value good">"~8 ms"</span>
-                        </div>
-                        <div class="metric">
-                            <span class="metric-label">"Memory"</span>
-                            <span class="metric-value good">"~2 MB"</span>
+                            <span class="metric-value good">{move || {
+                                let pkg = &packages[selected_package.get()];
+                                format!("~{} ms", pkg.4)
+                            }}</span>
                         </div>
                     </div>
                     <div class="progress-container">
@@ -419,12 +471,15 @@ fn DeploymentPanel() -> impl IntoView {
             </div>
             
             {move || if deploy_complete.get() {
+                let pkg = &packages[selected_package.get()];
+                let size_ratio = (pkg.1 * 1000) / pkg.2; // Docker MB to KB vs WASI KB
+                let download_ratio = (pkg.1 * 1000) / pkg.2;
                 view! {
                     <div class="deploy-result">
                         <p>"⚡ WASI deployed "</p>
-                        <strong>"2500x smaller"</strong>
-                        <p>" and "</p>
-                        <strong>"625x faster"</strong>
+                        <strong>{format!("{}x smaller", size_ratio)}</strong>
+                        <p>" with "</p>
+                        <strong>{format!("{}x faster download", download_ratio)}</strong>
                     </div>
                 }.into_any()
             } else {
