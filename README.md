@@ -164,6 +164,35 @@ For offshore oil rigs with limited satellite connectivity (~1 Mbps):
 
 *This is why WASI matters for remote ICS environments.*
 
+## 🧪 Verification & Testing
+
+This project includes a comprehensive test suite using **Vitest** to verify the security invariants of the WASI shim. We test the Host implementation directly to ensure permissions are enforced *before* the Guest code even runs.
+
+**Running Tests:**
+```bash
+cd host && npm test
+```
+
+### What We Test
+
+The test suite (`test/shims.test.js`) verifies the critical states of the Data Diode:
+
+| Scenario | Filesystem | Network | Expected Result |
+|----------|:----------:|:-------:|-----------------|
+| 🛡️ **Data Diode** | ✅ Allow | ❌ Block | Read sensor, fail exfiltration |
+| 🧊 **Full Lockdown** | ❌ Block | ❌ Block | All I/O rejected |
+| 🚨 **Breach Simulation** | ✅ Allow | ✅ Allow | Exfiltration succeeds (bad config) |
+
+### Security Invariants
+
+We also verify specific capability granularities:
+
+- **Path Isolation:** `wasi:filesystem` cannot access paths outside `/mnt/`
+- **IP Whitelisting:** Even in "Secure Channel" mode, connections to unapproved IPs (like `1.1.1.1`) are rejected at the shim level
+- **Port Matching:** Approved IPs must also use approved ports (e.g., `10.0.0.50:502` ✓, `10.0.0.50:8080` ✗)
+
+> 💡 The whitelist tests prove we implemented **granular network policies**, not just a simple on/off switch.
+
 ## 🌿 Branch Strategy
 
 | Branch | Purpose | Deployment |
