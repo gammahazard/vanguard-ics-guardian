@@ -561,6 +561,18 @@ input:checked+.toggle-slider::before {
   border-color: var(--accent-blue);
 }
 
+/* mobile: stack label above dropdown for extra breathing room */
+@media (max-width: 400px) {
+  .package-selector {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .package-selector select {
+    width: 100%;
+  }
+}
+
 .deploy-button {
   background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
 }
