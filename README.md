@@ -212,6 +212,34 @@ We also verify specific capability granularities:
 
 > 💡 The whitelist tests prove we implemented **granular network policies**, not just a simple on/off switch.
 
+## 🚀 Production Path: Browser → Edge Hardware
+
+The WASM component is **production-portable**—the same `.wasm` binary runs on multiple runtimes:
+
+| Runtime | Platform | Use Case |
+|---------|----------|----------|
+| **Browser** | Any modern browser | What we're demoing now (Leptos/Trunk) |
+| **Wasmtime** | Linux, Windows, macOS | Server-side, Rust host |
+| **WasmEdge** | ARM, RISC-V, Raspberry Pi | Edge devices, CNCF project |
+| **wasm3** | ESP32, STM32, Arduino | Resource-constrained MCUs |
+
+### What's Real vs Simulated
+
+| Component | This Demo | Production |
+|-----------|:---------:|:----------:|
+| WASM instantiation | ✅ Real (~4-10ms) | Same or faster |
+| 2oo3 voting logic | ✅ Real | Same code |
+| Capability enforcement | ✅ Real | Same code |
+| Modbus/Sensors | 🔶 Mock shims | Replace with real I/O |
+| Python restart times | 🔶 Simulated | Based on benchmarks |
+
+**To deploy on real hardware:**
+1. Replace JavaScript host with **Rust + Wasmtime** (same WASM component works)
+2. Swap mock shims for real protocol stacks (`tokio-modbus`, `rumqttc`)
+3. Add hardware watchdog for 2oo3 voter process
+
+> 📖 The architecture patterns (capability isolation, 2oo3 voting) translate directly to real ICS deployments.
+
 ## 🌿 Branch Strategy
 
 | Branch | Purpose | Deployment |
