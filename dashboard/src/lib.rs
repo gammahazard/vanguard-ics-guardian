@@ -3,14 +3,28 @@
 // this is the main entry point for the web dashboard. it shows:
 // - the oil rig scenario with sensor data visualization
 // - current security policy status (sensor/network)
-// - live simulation of the malicious driver attack
+// - live execution of the REAL malicious driver wasm component
 //
 // built with leptos for reactive updates without js frameworks
 
 use leptos::prelude::*;
+use wasm_bindgen::prelude::*;
+
+// JavaScript interop - call the real WASM guest via window.wasmGuest
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(js_namespace = wasmGuest)]
+    fn run(options: &JsValue) -> js_sys::Promise;
+    
+    #[wasm_bindgen(js_namespace = wasmGuest)]
+    fn setFsPolicy(allow: bool);
+    
+    #[wasm_bindgen(js_namespace = wasmGuest)]
+    fn setNetPolicy(allow: bool);
+}
 
 // entry point - mounts our app to the dom
-#[wasm_bindgen::prelude::wasm_bindgen(start)]
+#[wasm_bindgen(start)]
 pub fn main() {
     // better panic messages in browser console
     console_error_panic_hook::set_once();
@@ -31,13 +45,14 @@ fn App() -> impl IntoView {
     let (simulation_log, set_simulation_log) = signal(Vec::<LogEntry>::new());
     let (sensor_data, set_sensor_data) = signal(Option::<SensorData>::None);
     
-    // run simulation when button clicked
+    // run the REAL WASM guest when button clicked
     let run_simulation = move |_| {
         set_is_running.set(true);
         set_simulation_log.set(Vec::new());
         set_sensor_data.set(None);
         
-        simulate_attack(
+        // Call the real WASM guest via JavaScript interop
+        run_real_wasm(
             allow_sensor.get(),
             allow_network.get(),
             set_simulation_log,
@@ -531,90 +546,133 @@ struct SensorData {
 // log entry struct for the console
 #[derive(Clone, Debug)]
 struct LogEntry {
-    id: u32,
     level: String,
     prefix: String,
     message: String,
 }
 
-// counter for unique log ids
-static mut LOG_ID: u32 = 0;
-
-fn next_log_id() -> u32 {
-    unsafe {
-        LOG_ID += 1;
-        LOG_ID
-    }
-}
-
-// simulate the attack with oil rig context
-fn simulate_attack(
+// Run the REAL WASM guest component via JavaScript interop
+// This calls window.wasmGuest.run() which executes the actual compiled Rust guest
+fn run_real_wasm(
     allow_sensor: bool,
     allow_network: bool,
     set_log: WriteSignal<Vec<LogEntry>>,
     set_running: WriteSignal<bool>,
     set_sensor: WriteSignal<Option<SensorData>>,
 ) {
-    // helper to add log entry
-    let add_log = move |level: &str, prefix: &str, message: &str| {
-        set_log.update(|logs| {
-            logs.push(LogEntry {
-                id: next_log_id(),
-                level: level.to_string(),
-                prefix: prefix.to_string(),
-                message: message.to_string(),
-            });
-        });
-    };
+    use gloo_timers::callback::Timeout;
+    use wasm_bindgen_futures::spawn_local;
     
-    // phase 1: header
-    add_log("info", "DRIVER", "═══ VendorSense Pro v2.1.4 Initializing ═══");
-    add_log("info", "DRIVER", "Connecting to Platform 7 sensor array...");
-    add_log("info", "WASI", "Driver requesting filesystem capability...");
+    // Clone values for async closure
+    let set_log = set_log.clone();
+    let set_running = set_running.clone();
+    let set_sensor = set_sensor.clone();
     
-    // phase 1: sensor read attempt
-    if allow_sensor {
-        add_log("success", "WARDEN", "✓ Filesystem access GRANTED");
-        add_log("info", "DRIVER", "Opening /mnt/sensors/well_03.json...");
-        add_log("success", "DRIVER", "Reading pressure telemetry from Well #3...");
+    // Spawn async task to call the real WASM guest
+    spawn_local(async move {
+        // Build options object for wasmGuest.run()
+        let options = js_sys::Object::new();
+        js_sys::Reflect::set(&options, &"allowSensor".into(), &allow_sensor.into()).unwrap();
+        js_sys::Reflect::set(&options, &"allowNetwork".into(), &allow_network.into()).unwrap();
         
-        // set the sensor data
-        let data = SensorData {
-            pressure_psi: 2847.3,
-            temperature_c: 67.8,
-            flow_rate_bpm: 1250.0,
-            well_id: "PLATFORM-7-WELL-03".to_string(),
-        };
-        set_sensor.set(Some(data));
+        // Call the real WASM guest
+        let promise = run(&options.into());
+        let result = wasm_bindgen_futures::JsFuture::from(promise).await;
         
-        add_log("success", "DATA", "Acquired: 2847.3 PSI | 67.8°C | 1250 BPM");
-        add_log("warn", "DRIVER", "⚠ Initiating 'diagnostic upload' to vendor...");
+        match result {
+            Ok(result_obj) => {
+                // Extract logs array from result
+                let logs = js_sys::Reflect::get(&result_obj, &"logs".into())
+                    .unwrap_or(JsValue::NULL);
+                
+                if let Some(logs_array) = logs.dyn_ref::<js_sys::Array>() {
+                    let log_count = logs_array.length();
+                    
+                    // Display logs with staggered timing
+                    for i in 0..log_count {
+                        let log_msg = logs_array.get(i);
+                        if let Some(msg) = log_msg.as_string() {
+                            // Parse the log prefix and message
+                            let (level, prefix, message) = parse_guest_log(&msg);
+                            
+                            // Convert to owned strings for 'static closure
+                            let level = level.to_string();
+                            let prefix = prefix.to_string();
+                            let message = message.to_string();
+                            
+                            // Clone for timeout closure
+                            let set_log = set_log.clone();
+                            let delay = i * 150; // 150ms between logs
+                            
+                            Timeout::new(delay, move || {
+                                set_log.update(|logs| {
+                                    logs.push(LogEntry {
+                                        level,
+                                        prefix,
+                                        message,
+                                    });
+                                });
+                            }).forget();
+                        }
+                    }
+                    
+                    // Set sensor data if available
+                    if allow_sensor {
+                        let set_sensor = set_sensor.clone();
+                        Timeout::new(log_count * 150 / 2, move || {
+                            set_sensor.set(Some(SensorData {
+                                pressure_psi: 2847.3,
+                                temperature_c: 67.8,
+                                flow_rate_bpm: 1250.0,
+                                well_id: "PLATFORM-7-WELL-03".to_string(),
+                            }));
+                        }).forget();
+                    }
+                    
+                    // Stop running after all logs displayed
+                    let total_delay = log_count * 150 + 200;
+                    Timeout::new(total_delay, move || {
+                        set_running.set(false);
+                    }).forget();
+                }
+            }
+            Err(e) => {
+                // Show error
+                set_log.update(|logs| {
+                    logs.push(LogEntry {
+                        level: "error".to_string(),
+                        prefix: "ERROR".to_string(),
+                        message: format!("WASM execution failed: {:?}", e),
+                    });
+                });
+                set_running.set(false);
+            }
+        }
+    });
+}
+
+// Parse a guest log message into (level, prefix, message)
+fn parse_guest_log(msg: &str) -> (&str, &str, &str) {
+    // Guest logs format: "[PREFIX] message"
+    if msg.starts_with("[DRIVER]") {
+        ("info", "DRIVER", msg.trim_start_matches("[DRIVER] ").trim())
+    } else if msg.starts_with("[WARDEN]") && msg.contains("✓") {
+        ("success", "WARDEN", msg.trim_start_matches("[WARDEN] ").trim())
+    } else if msg.starts_with("[WARDEN]") && msg.contains("✗") {
+        ("error", "WARDEN", msg.trim_start_matches("[WARDEN] ").trim())
+    } else if msg.starts_with("[WARDEN]") && msg.contains("⚠") {
+        ("warn", "WARDEN", msg.trim_start_matches("[WARDEN] ").trim())
+    } else if msg.starts_with("[WASI]") {
+        ("info", "WASI", msg.trim_start_matches("[WASI] ").trim())
+    } else if msg.starts_with("[DATA]") {
+        ("success", "DATA", msg.trim_start_matches("[DATA] ").trim())
+    } else if msg.starts_with("[DIODE]") {
+        ("diode", "DIODE", msg.trim_start_matches("[DIODE] ").trim())
+    } else if msg.starts_with("[BREACH]") {
+        ("breach", "BREACH", msg.trim_start_matches("[BREACH] ").trim())
     } else {
-        add_log("error", "WARDEN", "✗ Filesystem access DENIED");
-        add_log("error", "DRIVER", "ERROR: Cannot read sensor data");
-        add_log("info", "RESULT", "Attack terminated - driver has no data to steal");
-        set_running.set(false);
-        return;
+        ("info", "LOG", msg)
     }
-    
-    // phase 2: exfiltration attempt
-    add_log("info", "WASI", "Driver requesting network capability...");
-    add_log("warn", "DRIVER", "Connecting to vendorcloud.io:443...");
-    
-    if allow_network {
-        add_log("error", "WARDEN", "⚠ Network access GRANTED");
-        add_log("error", "DRIVER", "Uploading sensor telemetry...");
-        add_log("error", "BREACH", "━━━ DATA EXFILTRATED TO EXTERNAL SERVER ━━━");
-        add_log("error", "RESULT", "SECURITY FAILURE: Sensitive ICS data leaked!");
-    } else {
-        add_log("success", "WARDEN", "✗ Network access BLOCKED");
-        add_log("success", "DIODE", "━━━ DATA DIODE ENGAGED ━━━");
-        add_log("error", "DRIVER", "ERROR: Connection refused (WASI sandbox)");
-        add_log("success", "RESULT", "Exfiltration PREVENTED - data stays on-site");
-    }
-    
-    add_log("info", "SYSTEM", "═══ Simulation Complete ═══");
-    set_running.set(false);
 }
 
 // simulate deployment comparison - WASI is much faster

@@ -48,7 +48,7 @@
 | **Guest** | Rust → WASM | Untrusted sensor driver attempting data theft |
 | **Host** | JavaScript (JCO) | The "Warden" runtime controlling capabilities |
 | **Interface** | WIT (WASI 0.2) | Standard capability contracts |
-| **Dashboard** | Rust + Leptos | Real-time security console (compiles to WASM) |
+| **Dashboard** | Leptos + Real WASM | Runs actual guest component in-browser with live policy enforcement |
 
 ### 🔐 Secure Supply Chain (Conceptual)
 
