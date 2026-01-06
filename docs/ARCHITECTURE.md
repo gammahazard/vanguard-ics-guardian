@@ -164,6 +164,42 @@ WASI and the Component Model are still maturing, but represent the direction for
 
 This project demonstrates these concepts are production-viable today.
 
+## Secure Supply Chain Workflow (The "Air Gap" Model)
+
+Unlike web apps, ICS updates must be cryptographically signed and verified before reaching the edge. This protects against **SolarWinds-style** supply chain attacks.
+
+```
+┌───────────────┐      ┌─────────────────┐      ┌──────────────────┐
+│ Vendor Build  │ ───▶ │  Vanguard Hub   │ ───▶ │   Edge Device    │
+│ (Rust Source) │      │ (Signing Auth)  │      │ (WASI Runtime)   │
+└───────────────┘      └─────────────────┘      └──────────────────┘
+       │                        │                        │
+       ▼                        ▼                        ▼
+  Compiles to            Adds Cryptographic        Verifies Sig &
+  .wasm (15KB)           Signature (Ed25519)       Loads Component
+```
+
+### Why Ed25519?
+
+| Algorithm | Key Size | Signature Size | Speed | Status |
+|-----------|----------|----------------|-------|--------|
+| RSA-2048 | 256 bytes | 256 bytes | Slow | Legacy |
+| ECDSA P-256 | 64 bytes | 64 bytes | Medium | Common |
+| **Ed25519** | **32 bytes** | **64 bytes** | **Fast** | **Modern** |
+
+Ed25519 is ideal for resource-constrained edge devices: small, fast, and quantum-resistant designs are in progress.
+
+### The Vanguard Hub Concept
+
+The Hub acts as a **trust boundary** between vendor code and production systems:
+
+1. **Vendor submits** compiled `.wasm` component
+2. **Hub validates** against known-good hashes and scans for suspicious patterns
+3. **Hub signs** with organization's Ed25519 private key
+4. **Edge verifies** signature before loading—rejects unsigned/tampered code
+
+> **Note:** This is a conceptual architecture. The signing infrastructure would be a future enhancement.
+
 ---
 
 *Built with Rust, WebAssembly, and the WASI 0.2 Component Model*

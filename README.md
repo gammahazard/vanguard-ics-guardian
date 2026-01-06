@@ -48,6 +48,15 @@
 | **Interface** | WIT (WASI 0.2) | Standard capability contracts |
 | **Dashboard** | Rust + Leptos | Real-time security console (compiles to WASM) |
 
+### 🔐 Secure Supply Chain (Conceptual)
+
+```
+Vendor Build ───▶ Vanguard Hub ───▶ Edge Device
+  (Rust)         (Ed25519 Sign)    (Verify & Load)
+```
+
+Protects against **SolarWinds-style** supply chain attacks.
+
 📖 **[Read full architecture doc →](docs/ARCHITECTURE.md)** - WASI vs Docker comparison
 
 ## 🔧 Tech Stack
