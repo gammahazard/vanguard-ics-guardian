@@ -2,18 +2,23 @@
 // wasi:filesystem shim - the "data diode" filesystem layer
 // ============================================================
 //
-// this file implements the wasi:filesystem interfaces that the
-// guest component imports. we're acting as a mock host, providing
-// controlled access to a virtual filesystem.
+// IEC 62443 ROLE: This file represents OT Zone assets (Purdue Level 0).
 //
-// key concepts:
+// In the Purdue Model:
+// - Level 0: Physical sensors, actuators, field devices
+// - This mock provides sensor telemetry: pressure, temperature, flow
+//
+// The sensor data at /mnt/sensors represents what a real ICS
+// would expose from its Level 0 devices (RTUs, PLCs, sensors).
+// 
+// Security Model:
 // - preopens: directories the host grants to the guest at startup
 // - descriptors: handles to files/directories (like file descriptors)
 // - capability-based: guest can't access anything not explicitly granted
 //
-// our security policy:
-// - when allowSensor=true: return mock sensor data
-// - when allowSensor=false: deny all filesystem access
+// Our security policy:
+// - when allowSensor=true: return mock sensor data (normal operation)
+// - when allowSensor=false: deny all filesystem access (lockdown)
 // ============================================================
 
 // ------------------------------------------------------------
@@ -64,11 +69,11 @@ export function getDirectories() {
 export class Descriptor {
   // private path this descriptor points to
   #path;
-  
+
   constructor(path) {
     this.#path = path;
   }
-  
+
   // open-at: open a file relative to this directory descriptor
   // this is how wasi does "openat" style operations
   openAt(pathFlags, path, openFlags, descriptorFlags) {
@@ -78,19 +83,19 @@ export class Descriptor {
       console.log('[WARDEN] ✗ filesystem access blocked by policy');
       return { tag: 'err', val: 'access' };
     }
-    
+
     // construct the full path
-    const fullPath = this.#path === '/' 
-      ? '/' + path 
+    const fullPath = this.#path === '/'
+      ? '/' + path
       : this.#path + '/' + path;
-    
+
     console.log(`[WARDEN] ✓ filesystem access allowed: ${fullPath}`);
-    
+
     // return a new descriptor for the opened file
     // in real wasi, this would do actual file operations
     return { tag: 'ok', val: new Descriptor(fullPath) };
   }
-  
+
   // read: read bytes from this file descriptor
   // returns [data, eof-status] tuple
   read(length, offset) {
@@ -99,23 +104,23 @@ export class Descriptor {
       // convert our mock data to bytes
       const encoder = new TextEncoder();
       const data = encoder.encode(MOCK_SENSOR_DATA);
-      
+
       console.log(`[WARDEN] → returning ${data.length} bytes of sensor data`);
-      
+
       // return success with data and "ended" (eof) status
       return { tag: 'ok', val: [data, 'ended'] };
     }
-    
+
     // file not found
     console.log(`[WARDEN] ✗ file not found: ${this.#path}`);
     return { tag: 'err', val: 'no-entry' };
   }
-  
+
   // stat: get file metadata (type, size, timestamps)
   stat() {
     const encoder = new TextEncoder();
     const size = BigInt(encoder.encode(MOCK_SENSOR_DATA).length);
-    
+
     return {
       tag: 'ok',
       val: {
@@ -128,12 +133,12 @@ export class Descriptor {
       }
     };
   }
-  
+
   // stat-at: get metadata for a path relative to this descriptor
   statAt(pathFlags, path) {
     return this.stat();
   }
-  
+
   // get-type: return descriptor type (file, directory, etc)
   getType() {
     if (this.#path === '/') {
@@ -141,7 +146,7 @@ export class Descriptor {
     }
     return 'regular-file';
   }
-  
+
   // read-via-stream: get an input stream for reading
   // (simplified implementation)
   readViaStream(offset) {

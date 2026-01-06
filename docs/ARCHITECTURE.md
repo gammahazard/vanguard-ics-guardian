@@ -12,6 +12,49 @@ Industrial control systems need to run third-party sensor drivers and data proce
 - Must be prevented from exfiltrating that data
 - Runs on resource-constrained edge devices
 
+## IEC 62443 Zone & Conduit Model
+
+This project implements the **IEC 62443** zone and conduit security architecture. Our WASI runtime acts as the **Conduit** (data diode) enforcing unidirectional flow between security zones.
+
+### Purdue Model Mapping
+
+```
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                        IEC 62443 SECURITY ZONES                              │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   ┌────────────────────────┐                    ┌────────────────────────┐   │
+│   │      OT ZONE           │                    │       IT ZONE          │   │
+│   │   (Purdue Levels 0-2)  │                    │   (Purdue Levels 4-5)  │   │
+│   │                        │                    │                        │   │
+│   │  Level 0: Sensors      │   ══════════════▶  │  Level 4: Enterprise   │   │
+│   │    └─ /mnt/sensors     │      CONDUIT       │    └─ Cloud/Analytics  │   │
+│   │                        │   (Data Diode)     │                        │   │
+│   │  Level 1: PLCs         │   ◀══════════════  │  Level 5: DMZ/Vendors  │   │
+│   │    └─ 10.0.0.50:502    │      BLOCKED ❌    │    └─ 1.1.1.1 (Cloud)  │   │
+│   │                        │                    │                        │   │
+│   │  Level 2: SCADA        │                    │                        │   │
+│   │    └─ 192.168.100.10   │                    │                        │   │
+│   └────────────────────────┘                    └────────────────────────┘   │
+│                                                                              │
+│   Our Implementation:                                                        │
+│   • filesystem.js = OT Zone assets (sensor data at Level 0)                 │
+│   • sockets.js    = Conduit (enforces unidirectional flow)                  │
+│   • Approved IPs  = Level 1-2 internal SCADA systems only                   │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+### How This Maps to Our Code
+
+| IEC 62443 Concept | Our Implementation | File |
+|-------------------|-------------------|------|
+| **OT Zone (Level 0)** | Mock sensor data at `/mnt/sensors` | `filesystem.js` |
+| **Conduit (Data Diode)** | Network policy enforcement | `sockets.js` |
+| **Approved Internal (L1-2)** | IP whitelist: `10.0.0.50:502`, etc. | `sockets.js` |
+| **Blocked External (L4-5)** | All cloud/vendor IPs rejected | `sockets.js` |
+
+> ⚠️ **Note:** This is a demonstration of IEC 62443 concepts, not a certified implementation. Formal compliance requires third-party assessment.
+
 ## Current Approach: Docker + Python
 
 ```
