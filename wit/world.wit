@@ -1,78 +1,55 @@
-package vanguard:ics-guardian@0.1.0;
-
 // ============================================================
-// vanguard ics guardian - security simulation world
+// vanguard:containment - simplified capability interface
 // ============================================================
 //
-// this world defines a wasm component that requests access to filesystem
-// and network capabilities via standard wasi 0.2 interfaces.
+// this is the "polyfill approach": we define local interfaces that
+// mirror wasi behavior without depending on the official registry.
 //
-// the key insight: the guest component asks for these capabilities,
-// but the HOST decides what to actually provide. this is capability-based
-// security in action - the "principle of least authority" (pola).
+// why this approach?
+// - the wasi 0.2 registry tooling had compatibility issues
+// - this demonstrates the SAME capability-based security model
+// - the guest/host security boundary works identically
 //
-// in our simulation:
-// - the guest is a "malicious" 3rd-party sensor driver
-// - the host acts as a "data diode" - allows reads, blocks network
+// the key insight: whether you call it wasi:filesystem or sensor-fs,
+// the HOST still controls what the guest can actually do.
 // ============================================================
 
+package vanguard:containment@0.1.0;
+
+// ------------------------------------------------------------
+// sensor-fs: represents filesystem capabilities
+// ------------------------------------------------------------
+// this mirrors wasi:filesystem behavior:
+// - the guest can request to read files
+// - the host decides whether to allow or deny
+//
+interface sensor-fs {
+    // read a file from the virtual filesystem
+    // returns: Ok(content) if allowed, Err(reason) if denied
+    read-file: func(path: string) -> result<string, string>;
+}
+
+// ------------------------------------------------------------
+// sensor-net: represents network capabilities
+// ------------------------------------------------------------
+// this mirrors wasi:sockets behavior:
+// - the guest can request to send data over the network
+// - the host can block this (data diode) or allow it (breach)
+//
+interface sensor-net {
+    // attempt to send telemetry data to external server
+    // returns: Ok(bytes-sent) if allowed, Err(reason) if blocked
+    send-telemetry: func(data: string) -> result<u32, string>;
+}
+
+// ------------------------------------------------------------
+// the world: what the guest component requests
+// ------------------------------------------------------------
 world ics-guardian {
-
-    // ------------------------------------------------------------
-    // filesystem imports
-    // ------------------------------------------------------------
-    // these let the guest read files from a virtual filesystem.
-    // in real wasi, the host "preopens" specific directories,
-    // and the guest can only access those - no arbitrary paths.
+    // import capabilities the guest wants
+    import sensor-fs;
+    import sensor-net;
     
-    // types: defines descriptor, error-code, open-flags, etc.
-    import wasi:filesystem/types@0.2.0;
-    
-    // preopens: get-directories() returns the dirs the host granted us
-    import wasi:filesystem/preopens@0.2.0;
-    
-    // ------------------------------------------------------------
-    // socket imports
-    // ------------------------------------------------------------
-    // these let the guest attempt tcp connections.
-    // our host will BLOCK all of these - that's the "data diode".
-    
-    // network: defines ip addresses, error codes for sockets
-    import wasi:sockets/network@0.2.0;
-    
-    // tcp: the actual tcp-socket resource with connect/listen/etc
-    import wasi:sockets/tcp@0.2.0;
-    
-    // ------------------------------------------------------------
-    // io stream imports
-    // ------------------------------------------------------------
-    // wasi uses streams for reading/writing file contents.
-    // these are the low-level primitives.
-    
-    // error: defines the error type for stream operations
-    import wasi:io/error@0.2.0;
-    
-    // streams: input-stream and output-stream resources
-    import wasi:io/streams@0.2.0;
-    
-    // ------------------------------------------------------------
-    // cli imports
-    // ------------------------------------------------------------
-    // for printing to console - how our driver reports its actions.
-    
-    // stdout: get-stdout() returns an output-stream for printing
-    import wasi:cli/stdout@0.2.0;
-    
-    // stderr: get-stderr() for error messages
-    import wasi:cli/stderr@0.2.0;
-    
-    // ------------------------------------------------------------
-    // component export
-    // ------------------------------------------------------------
-    // this is what the host calls to start the driver.
-    // the driver will attempt to:
-    // 1. read sensor data from /mnt/sensor_data.json
-    // 2. exfiltrate it to 1.1.1.1:80 (cloudflare dns, simulating vendor cloud)
-    
+    // export the entry point the host calls
     export run: func();
 }
