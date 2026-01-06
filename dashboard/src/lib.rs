@@ -388,11 +388,11 @@ fn DeploymentPanel() -> impl IntoView {
                     let target = event_target::<HtmlSelectElement>(&ev);
                     set_selected_package.set(target.selected_index() as usize);
                 }>
-                    <option selected>"⚙️ PLC Firmware Update (15 KB)"</option>
-                    <option>"🔧 Sensor Driver + Logging (70 KB)"</option>
-                    <option>"📊 Edge Analytics Package (500 KB)"</option>
-                    <option>"🖥️ SCADA Service Pack (2 MB)"</option>
-                    <option>"🏭 Full System Image (8 MB)"</option>
+                    <option selected>"⚙️ PLC Firmware — Docker: 50 MB vs WASI: 15 KB"</option>
+                    <option>"🔧 Sensor Driver — Docker: 200 MB vs WASI: 70 KB"</option>
+                    <option>"📊 Edge Analytics — Docker: 500 MB vs WASI: 500 KB"</option>
+                    <option>"🖥️ SCADA Patch — Docker: 1.5 GB vs WASI: 2 MB"</option>
+                    <option>"🏭 Full System — Docker: 4 GB vs WASI: 8 MB"</option>
                 </select>
             </div>
             
@@ -612,27 +612,38 @@ fn simulate_attack(
 }
 
 // simulate deployment comparison - WASI is much faster
+// uses set_timeout to animate progress bars with realistic timing
 fn simulate_deployment(
     set_docker: WriteSignal<i32>,
     set_wasi: WriteSignal<i32>,
     set_deploying: WriteSignal<bool>,
     set_complete: WriteSignal<bool>,
 ) {
-    // WASI completes almost instantly (simulated with quick progress)
-    // Docker takes much longer (simulated with slow progress)
+    use gloo_timers::callback::Timeout;
     
-    // Immediately start WASI at high progress
-    set_wasi.set(50);
+    // WASI completes in ~500ms (near instant for small component)
+    // Docker takes ~3000ms (to simulate slow container pull)
     
-    // Docker starts slow
-    set_docker.set(5);
+    // Animate WASI (fast - 10 steps over 500ms = 50ms per step)
+    for i in 1..=10 {
+        let set_wasi = set_wasi.clone();
+        Timeout::new((i * 50) as u32, move || {
+            set_wasi.set(i * 10);
+        }).forget();
+    }
     
-    // Simulate the remaining progress
-    // In a real app, we'd use set_timeout or async
-    // For now, just set the final states
-    set_wasi.set(100);
-    set_docker.set(100);
-    set_deploying.set(false);
-    set_complete.set(true);
+    // Animate Docker (slow - 10 steps over 3000ms = 300ms per step)
+    for i in 1..=10 {
+        let set_docker = set_docker.clone();
+        Timeout::new((i * 300) as u32, move || {
+            set_docker.set(i * 10);
+        }).forget();
+    }
+    
+    // Complete after Docker finishes (3000ms)
+    Timeout::new(3100, move || {
+        set_deploying.set(false);
+        set_complete.set(true);
+    }).forget();
 }
 

@@ -28,6 +28,9 @@ web-sys = { version = "0.3", features = ["HtmlInputElement", "MouseEvent", "Even
 console_error_panic_hook = "0.1"
 wasm-bindgen = "0.2"
 
+# for async timers (progress bar animation)
+gloo-timers = "0.3"
+
 [profile.release]
 # optimize for size since this runs in browser
 opt-level = "z"
