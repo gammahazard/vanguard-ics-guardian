@@ -245,6 +245,22 @@ body {
   border-opacity: 0.3;
 }
 
+/* ---- policy panel note ---- */
+.policy-note {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: rgba(0, 170, 255, 0.05);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  border-left: 2px solid var(--accent-blue);
+}
+
+.policy-note strong {
+  color: var(--accent-blue);
+}
+
+
 .sensor-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;

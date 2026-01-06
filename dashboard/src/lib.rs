@@ -220,11 +220,17 @@ fn PolicyPanel(
                 
                 <PolicyToggle
                     label="Network Access"
-                    description="Allow outbound TCP connections"
+                    description="Block untrusted egress (exfiltration attempts)"
                     checked=allow_network
                     on_toggle=move |v| set_allow_network.set(v)
                 />
             </div>
+            
+            <p class="policy-note">
+                "💡 Network toggle controls "
+                <strong>"outbound"</strong>
+                " connections only. Trusted updates arrive via secure side-channel."
+            </p>
         </section>
     }
 }
