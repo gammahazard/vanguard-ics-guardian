@@ -201,6 +201,7 @@ The driver code **cannot bypass this**. It has no other way to access the networ
 3. **Auditable**: WIT interface definitions clearly show what code can access
 4. **Fast Recovery**: <10ms startup means quick failover
 5. **Edge-Ready**: Low memory/CPU overhead suits embedded deployments
+6. **2oo3 Fault Tolerance**: WASM's ~10ms instantiation enables hitless software failover (see live demo)
 
 ## Future Vision
 
