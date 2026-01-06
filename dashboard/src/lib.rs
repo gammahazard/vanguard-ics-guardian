@@ -333,17 +333,34 @@ fn DeploymentPanel() -> impl IntoView {
     let (selected_package, set_selected_package) = signal(0_usize); // 0=minimal, 1=full, 2=ml
     
     // helper functions to get package data (avoids closure ownership issues)
+    // sizes based on real-world ICS/SCADA industry research:
+    // - PLC firmware: 1-100 MB (Siemens, Rockwell)
+    // - Sensor drivers: 10-200 MB (with dependencies)
+    // - SCADA patches: 50-500 MB (service packs)
+    // - Full SCADA suite: 1-5 GB (complete install)
     fn get_docker_mb(idx: usize) -> i32 {
-        match idx { 0 => 200, 1 => 800, _ => 2000 }
+        match idx {
+            0 => 50,    // PLC firmware update
+            1 => 200,   // Sensor driver bundle
+            2 => 500,   // Edge analytics package
+            3 => 1500,  // SCADA service pack
+            _ => 4000,  // Full system image
+        }
     }
     fn get_wasi_kb(idx: usize) -> i32 {
-        match idx { 0 => 15, 1 => 500, _ => 5000 }
+        match idx {
+            0 => 15,     // Minimal driver (our measured 14.7KB!)
+            1 => 70,     // With logging (our 68.9KB)
+            2 => 500,    // Edge analytics
+            3 => 2000,   // SCADA component
+            _ => 8000,   // Full processing
+        }
     }
     fn get_docker_start(idx: usize) -> i32 {
-        match idx { 0 => 3, 1 => 8, _ => 15 }
+        match idx { 0 => 2, 1 => 4, 2 => 8, 3 => 15, _ => 30 }
     }
     fn get_wasi_start(idx: usize) -> i32 {
-        match idx { 0 => 5, 1 => 50, _ => 200 }
+        match idx { 0 => 5, 1 => 10, 2 => 50, 3 => 100, _ => 300 }
     }
     
     let run_deployment = move |_| {
@@ -371,9 +388,11 @@ fn DeploymentPanel() -> impl IntoView {
                     let target = event_target::<HtmlSelectElement>(&ev);
                     set_selected_package.set(target.selected_index() as usize);
                 }>
-                    <option selected>"🔧 Minimal Sensor Driver (15 KB)"</option>
-                    <option>"📊 Full Processing Suite (500 KB)"</option>
-                    <option>"🤖 ML Inference Engine (5 MB)"</option>
+                    <option selected>"⚙️ PLC Firmware Update (15 KB)"</option>
+                    <option>"🔧 Sensor Driver + Logging (70 KB)"</option>
+                    <option>"📊 Edge Analytics Package (500 KB)"</option>
+                    <option>"🖥️ SCADA Service Pack (2 MB)"</option>
+                    <option>"🏭 Full System Image (8 MB)"</option>
                 </select>
             </div>
             
