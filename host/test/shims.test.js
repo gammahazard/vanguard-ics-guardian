@@ -227,3 +227,80 @@ describe('integration tests', () => {
         expect(connectResult.tag).toBe('ok');
     });
 });
+
+// -------- secure channel tests (approved endpoints) --------
+
+describe('secure channel mode', () => {
+    let originalAllowNetwork;
+    let originalAllowApproved;
+
+    beforeEach(() => {
+        originalAllowNetwork = netPolicy.allowNetwork;
+        originalAllowApproved = netPolicy.allowApprovedEndpoints;
+        // set up secure channel mode
+        netPolicy.allowNetwork = false;
+        netPolicy.allowApprovedEndpoints = true;
+    });
+
+    afterEach(() => {
+        netPolicy.allowNetwork = originalAllowNetwork;
+        netPolicy.allowApprovedEndpoints = originalAllowApproved;
+    });
+
+    it('allows connection to approved internal SCADA endpoint', () => {
+        const { val: socket } = TcpSocket.new('ipv4');
+        // 10.0.0.50:502 is in the approved list (modbus)
+        const result = socket.startConnect(
+            {},
+            { tag: 'ipv4', val: { address: [10, 0, 0, 50], port: 502 } }
+        );
+
+        expect(result.tag).toBe('ok');
+    });
+
+    it('allows connection to approved data historian', () => {
+        const { val: socket } = TcpSocket.new('ipv4');
+        // 192.168.100.10:443 is in the approved list
+        const result = socket.startConnect(
+            {},
+            { tag: 'ipv4', val: { address: [192, 168, 100, 10], port: 443 } }
+        );
+
+        expect(result.tag).toBe('ok');
+    });
+
+    it('blocks connection to external cloud (not on whitelist)', () => {
+        const { val: socket } = TcpSocket.new('ipv4');
+        // 1.1.1.1 (cloudflare) is NOT approved
+        const result = socket.startConnect(
+            {},
+            { tag: 'ipv4', val: { address: [1, 1, 1, 1], port: 80 } }
+        );
+
+        expect(result.tag).toBe('err');
+        expect(result.val).toBe('connection-refused');
+    });
+
+    it('blocks connection to unapproved internal address', () => {
+        const { val: socket } = TcpSocket.new('ipv4');
+        // 10.0.0.99 is internal but NOT on the whitelist
+        const result = socket.startConnect(
+            {},
+            { tag: 'ipv4', val: { address: [10, 0, 0, 99], port: 80 } }
+        );
+
+        expect(result.tag).toBe('err');
+    });
+
+    it('blocks connection to approved IP but wrong port', () => {
+        const { val: socket } = TcpSocket.new('ipv4');
+        // 10.0.0.50 is approved, but only on port 502
+        const result = socket.startConnect(
+            {},
+            { tag: 'ipv4', val: { address: [10, 0, 0, 50], port: 8080 } }
+        );
+
+        expect(result.tag).toBe('err');
+    });
+});
+
