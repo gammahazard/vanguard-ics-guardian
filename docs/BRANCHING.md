@@ -11,23 +11,26 @@ main ─────────────────────────
          │
          ├──▶ feature/wit-interface ──────┐
          │                                │
-         ├──▶ feature/rust-guest ─────────┼──▶ merge to develop
+         ├──▶ feature/rust-guest ─────────┼
          │                                │
-         ├──▶ feature/js-host ────────────┤
+         ├──▶ feature/js-host ────────────┼──▶ merge to develop
          │                                │
-         └──▶ feature/web-dashboard ──────┘
+         ├──▶ feature/web-dashboard ──────┤
+         │                                │
+         └──▶ feature/secure-channel ─────┘
 ```
 
 ## Branch Purposes
 
 | Branch | Base | Purpose | Merge Target |
-|--------|------|---------|--------------|
+|--------|------|---------|--------------||
 | `main` | - | Production-ready code | - |
 | `develop` | `main` | Integration of features | `main` |
 | `feature/wit-interface` | `develop` | WIT interface definitions | `develop` |
 | `feature/rust-guest` | `develop` | Rust WASM guest component | `develop` |
 | `feature/js-host` | `develop` | JavaScript host shims | `develop` |
 | `feature/web-dashboard` | `develop` | Security console UI | `develop` |
+| `feature/secure-channel` | `develop` | Approved endpoints whitelist | `develop` |
 
 ## Workflow
 

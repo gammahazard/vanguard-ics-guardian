@@ -44,16 +44,16 @@ Attack Surface: Massive (entire Linux userland)
 ┌─────────────────────────────────────────────┐
 │           WASI Runtime (Warden)              │
 │  ┌───────────────────────────────────────┐  │
-│  │  WASM Component (~100KB)              │  │
+│  │  WASM Component (14.7KB actual)       │  │
 │  │  └── Sensor driver (compiled Rust)    │  │
 │  └───────────────────────────────────────┘  │
 │                                             │
 │  Capabilities granted at instantiation:     │
-│  ✓ wasi:filesystem (read /mnt/sensors)     │
-│  ✗ wasi:sockets (not granted)              │
+│  ✓ sensor-fs (read /mnt/sensors)           │
+│  ✗ sensor-net (not granted)                │
 └─────────────────────────────────────────────┘
-Component Size: 50-500KB
-Startup Time: <10ms (with compiled WASM)
+Component Size: 14.7KB (measured)
+Startup Time: <10ms
 Attack Surface: Only granted capabilities
 ```
 
@@ -63,7 +63,7 @@ Attack Surface: Only granted capabilities
 |--------|-----------------|---------------------|
 | **Isolation Model** | Process/namespace | Capability-based |
 | **Security Default** | Allow (must block) | Deny (must grant) |
-| **Binary Size** | 500MB - 2GB | 50 - 500KB |
+| **Binary Size** | 500MB - 2GB | **14.7KB** (measured) |
 | **Cold Start** | 2-10 seconds | <10ms |
 | **Memory Overhead** | 50-200MB | 1-10MB |
 | **Static Analysis** | Limited | Full (linear memory model) |
@@ -76,13 +76,18 @@ Attack Surface: Only granted capabilities
 The WASI Component Model enforces security through **imports**. A component can only use capabilities it explicitly imports, and the host must provide them:
 
 ```wit
-// world.wit - what the driver can access
+// world.wit - "polyfill" approach for local interfaces
+// mirrors WASI behavior without registry dependencies
 world ics-guardian {
-    import wasi:filesystem/types;     // ✓ granted
-    import wasi:filesystem/preopens;  // ✓ granted
-    import wasi:sockets/tcp;          // ✗ blocked by host
+    import sensor-fs;   // ✓ granted (read sensors)
+    import sensor-net;  // ✗ blocked by host (data diode)
+    export run: func();
 }
 ```
+
+> **Note:** We use a "polyfill" approach with locally-defined interfaces that
+> mirror WASI behavior. This avoids registry dependency issues while
+> demonstrating the same capability-based security model.
 
 ### Host-Side Enforcement
 
@@ -144,7 +149,7 @@ The driver code **cannot bypass this**. It has no other way to access the networ
 ## Why This Matters for ICS
 
 1. **Defense in Depth**: Capabilities are enforced at the runtime level, not just network rules
-2. **Minimal TCB**: The Trusted Computing Base is tiny (~100KB runtime vs GB container)
+2. **Minimal TCB**: The Trusted Computing Base is tiny (14.7KB component vs GB container)
 3. **Auditable**: WIT interface definitions clearly show what code can access
 4. **Fast Recovery**: <10ms startup means quick failover
 5. **Edge-Ready**: Low memory/CPU overhead suits embedded deployments
