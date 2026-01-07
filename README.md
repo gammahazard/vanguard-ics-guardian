@@ -173,6 +173,56 @@ node cli/run.mjs
 - `10.0.0.51:102` - PLC gateway (S7)
 - `192.168.100.10:443` - Data historian
 
+<details>
+<summary><h3>🎬 Attack Simulation Gallery</h3></summary>
+
+> Watch the malicious driver attempt data exfiltration under different security policies
+
+#### 🛡️ Data Diode Mode — Exfiltration Blocked
+<p align="center">
+  <img src="docs/images/attack-data-diode.png" alt="Data Diode Attack" width="700"/>
+</p>
+<p align="center"><em>Sensor read succeeds ✓ | Network exfiltration blocked ✗</em></p>
+
+---
+
+#### 🔒 Full Lockdown Mode — All Access Denied
+<p align="center">
+  <img src="docs/images/attack-full-lockdown.png" alt="Full Lockdown Attack" width="700"/>
+</p>
+<p align="center"><em>Zero trust: filesystem blocked, network blocked</em></p>
+
+---
+
+#### ⚠️ Breach Simulation — Security Failure Demo
+<p align="center">
+  <img src="docs/images/attack-breach.png" alt="Breach Simulation" width="700"/>
+</p>
+<p align="center"><em>What happens when security is misconfigured — data exfiltrated!</em></p>
+
+</details>
+
+<details>
+<summary><h3>📦 Docker vs WASI Deployment Comparison</h3></summary>
+
+> See the 3333x size difference in action
+
+#### Deploying First Package (Docker: 50 MB vs WASI: 15 KB)
+<p align="center">
+  <img src="docs/images/deploy-comparison.png" alt="Deployment Start" width="700"/>
+</p>
+
+---
+
+#### Deployment Complete — WASI Wins
+<p align="center">
+  <img src="docs/images/deploy-complete.png" alt="Deployment Complete" width="700"/>
+</p>
+<p align="center"><em>WASI deployed: <strong>3333x smaller</strong> with <strong>3333x faster download</strong></em></p>
+
+</details>
+
+
 ## 🧪 Testing
 
 ```bash
