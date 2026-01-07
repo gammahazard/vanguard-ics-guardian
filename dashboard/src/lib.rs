@@ -766,7 +766,7 @@ fn TMRPanel() -> impl IntoView {
             
             <p class="tmr-desc">
                 "Triple Modular Redundancy with majority voting. "
-                "Click 'Inject Fault' to corrupt one instance and watch WASM recover in ~10ms vs Python's 3+ second restart."
+                "Click 'Inject Fault' to corrupt one instance and watch WASM recover in <0.1ms vs Python's 3+ second restart."
             </p>
             
             <div class="tmr-controls">

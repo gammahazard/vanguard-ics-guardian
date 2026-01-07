@@ -243,7 +243,7 @@ node cli/run.mjs
 ## 🧪 Testing
 
 ```bash
-# JavaScript host tests (18 tests)
+# JavaScript host tests (17 tests)
 cd host && npm test
 
 # Rust guest tests
@@ -350,7 +350,7 @@ The WASM component is **production-portable**—the same `.wasm` binary runs on 
 
 | Component | This Demo | Production |
 |-----------|:---------:|:----------:|
-| WASM instantiation | ✅ Real (~4-10ms) | Same or faster |
+| WASM instantiation | ✅ Real (<0.1ms) | Same or faster |
 | 2oo3 voting logic | ✅ Real | Same code |
 | Capability enforcement | ✅ Real | Same code |
 | Modbus/Sensors | 🔶 Mock shims | Replace with real I/O |
