@@ -18,6 +18,9 @@
   <img src="https://img.shields.io/badge/mobile-responsive-blueviolet" alt="Mobile Responsive"/>
 </p>
 
+<p align="center">
+  <img src="docs/images/dashboard-overview.png" alt="Vanguard ICS Guardian Dashboard" width="700"/>
+</p>
 
 ---
 
@@ -117,16 +120,52 @@ cd host && npm install && npm run demo
 **Run the CLI Demo (proves browser → edge portability):**
 ```bash
 node cli/run.mjs
-# Shows real instantiation benchmarks (~0.1-0.5ms)
 ```
+
+<details>
+<summary><strong>📊 Example CLI Benchmark Output</strong></summary>
+
+```
+╔══════════════════════════════════════════════════════════════════╗
+║           VANGUARD ICS GUARDIAN - WASM PORTABILITY DEMO          ║
+╠══════════════════════════════════════════════════════════════════╣
+║  Same .wasm binary running in Node.js (proves browser → edge)    ║
+╚══════════════════════════════════════════════════════════════════╝
+
+📦 Loading: malicious_driver.core.wasm (14.7 KB)
+
+⏱️  WASM Performance Metrics
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Load from disk:    2.15 ms
+   Compile (V8):     12.45 ms
+   Instantiate:       0.18 ms  ← This is what 2oo3 TMR measures!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔁 Instantiation Benchmark (10 iterations)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Min:    0.12 ms
+   Max:    0.31 ms
+   Avg:    0.18 ms
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🛡️  Security Policy Tests
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   [DATA DIODE]    FS: ✓ ALLOW  Net: ✗ BLOCK
+   [SECURE CHAN]   FS: ✓ ALLOW  Net: ✓ internal only
+   [FULL LOCKDOWN] FS: ✗ BLOCK  Net: ✗ BLOCK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ WASM component verified: same binary, same security, any runtime
+```
+</details>
 
 ## 📊 Security Modes
 
 | Mode | Filesystem | External | Internal | Description |
 |------|:----------:|:--------:|:--------:|-------------|
 | 🛡️ **Data Diode** | ✓ Allow | ✗ Block | ✗ Block | *Production mode* |
-| � **Secure Channel** | ✓ Allow | ✗ Block | ✓ Allow | Internal SCADA only |
-| �🔒 **Full Lockdown** | ✗ Block | ✗ Block | ✗ Block | Zero trust |
+| 🔗 **Secure Channel** | ✓ Allow | ✗ Block | ✓ Allow | Internal SCADA only |
+| 🔒 **Full Lockdown** | ✗ Block | ✗ Block | ✗ Block | Zero trust |
 | ⚠️ **Breach** | ✓ Allow | ✓ Allow | ✓ Allow | Security failure demo |
 
 **Approved Internal Endpoints (Secure Channel mode):**
@@ -177,6 +216,15 @@ For offshore oil rigs with limited satellite connectivity (~1 Mbps):
 ## ⚡ 2oo3 Fault Tolerance Demo
 
 The dashboard includes a **Triple Modular Redundancy (TMR)** visualization demonstrating WASM's fault tolerance advantages for safety-critical systems:
+
+<details open>
+<summary><strong>📹 Watch: Fault Injection → Instant WASM Recovery</strong></summary>
+<br/>
+<p align="center">
+  <img src="docs/images/fault-injection-demo.webp" alt="Fault Injection Demo" width="700"/>
+</p>
+<p align="center"><em>Click "Inject Fault" → WASM rebuilds in 0.2ms while Python takes 3+ seconds</em></p>
+</details>
 
 | Metric | WASM Hot-Swap | Python Multiprocessing |
 |--------|:-------------:|:----------------------:|
