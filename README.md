@@ -200,6 +200,14 @@ node cli/run.mjs
 </p>
 <p align="center"><em>What happens when security is misconfigured — data exfiltrated!</em></p>
 
+---
+
+#### ❓ Invalid Config Mode — Policy Enforcement
+<p align="center">
+  <img src="docs/images/attack-invalid-config-cropped.png" alt="Invalid Config" width="700"/>
+</p>
+<p align="center"><em>Runtime blocks execution when configuration is invalid</em></p>
+
 </details>
 
 <details>
@@ -210,7 +218,15 @@ node cli/run.mjs
 <p align="center">
   <img src="docs/images/deploy-cropped.png" alt="Deployment Comparison" width="700"/>
 </p>
-<p align="center"><em>WASI deployed: <strong>at minimum 500x smaller</strong> with <strong>at least 500x faster download</strong></em></p>
+<p align="center"><em>PLC Firmware: Docker 50 MB vs WASI 15 KB</em></p>
+
+---
+
+#### Full System Package (Docker: 4 GB vs WASI: 8 MB)
+<p align="center">
+  <img src="docs/images/deploy-fullsystem-cropped.png" alt="Full System Deployment" width="700"/>
+</p>
+<p align="center"><em>Even at scale, WASI remains <strong>500x smaller</strong> with <strong>500x faster download</strong></em></p>
 
 </details>
 
