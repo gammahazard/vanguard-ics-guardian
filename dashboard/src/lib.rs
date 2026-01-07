@@ -831,7 +831,14 @@ fn TMRPanel() -> impl IntoView {
                             <span class="metric-label">"Rebuild Time"</span>
                             <span class="metric-value good">{move || {
                                 let ms = wasm_rebuild_ms.get();
-                                if ms > 0.0 { format!("{:.2}ms (real)", ms) } else { String::from("—") }
+                                let running = is_running.get();
+                                if ms > 0.0 { 
+                                    format!("{:.2}ms (real)", ms) 
+                                } else if running { 
+                                    String::from("measuring...") 
+                                } else { 
+                                    String::from("—") 
+                                }
                             }}</span>
                         </div>
                         <div class="metric">
