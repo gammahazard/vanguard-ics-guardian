@@ -876,10 +876,11 @@ fn TMRPanel() -> impl IntoView {
             <div class="tmr-note">
                 <span>"💡 "</span>
                 <strong>"IEC 61508 SIL 2/3"</strong>
-                <span>": 2oo3 voting provides fault tolerance for safety-critical systems. "</span>
-                <span>"WASM's microsecond instantiation enables "</span>
-                <strong>"hitless"</strong>
-                <span>" software failover."</span>
+                <span>": While 2oo3 voting provides "</span>
+                <strong>"fault masking"</strong>
+                <span>", WASM's microsecond instantiation enables rapid "</span>
+                <strong>"self-healing"</strong>
+                <span>", eliminating the MTTR vulnerability window."</span>
             </div>
         </section>
     }

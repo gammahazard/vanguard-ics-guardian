@@ -186,6 +186,15 @@ The dashboard demonstrates Triple Modular Redundancy for crash recovery:
 - **Async rebuild** - Faulty instance reinstantiates in ~0.2ms
 - **Continuous operation** - Sensor readings never interrupted
 
+### Masking vs. Healing
+
+| Role | Mechanism | What It Does |
+|------|-----------|--------------|
+| **Fault Masking** | 2oo3 voting | Keeps system running with 2/3 nodes (architectural) |
+| **Self-Healing** | WASM hot-swap | Restores failed node in ~0.2ms (eliminates MTTR) |
+
+**Key Insight**: 2oo3 voting *tolerates* faults (masking). WASM instantiation *heals* faults (restores redundancy). Together, they minimize the "Degraded State" window from seconds to microseconds.
+
 This demonstrates SIL 2/3 voting patterns (IEC 61508) at the software layer. *Note: This is an architectural demonstration, not a certified safety system.*
 
 ## What Each Technology Solves
