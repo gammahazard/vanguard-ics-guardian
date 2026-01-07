@@ -358,17 +358,15 @@ body {
 
 /* ---- mode preset buttons ---- */
 .mode-presets {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.4rem;
   margin-bottom: 1rem;
 }
 
 .preset-btn {
-  flex: 1;
-  min-width: 100px;
-  padding: 0.5rem 0.75rem;
-  font-size: 0.75rem;
+  padding: 0.4rem 0.3rem;
+  font-size: 0.65rem;
   font-weight: 500;
   color: var(--text-secondary);
   background: var(--bg-secondary);
@@ -376,7 +374,9 @@ body {
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 0.2s;
-  white-space: nowrap;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .preset-btn:hover {
@@ -393,11 +393,7 @@ body {
 
 @media (max-width: 500px) {
   .mode-presets {
-    flex-direction: column;
-  }
-
-  .preset-btn {
-    min-width: 100%;
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
