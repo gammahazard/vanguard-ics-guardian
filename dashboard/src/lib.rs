@@ -670,6 +670,7 @@ fn TMRPanel() -> impl IntoView {
             let set_states = set_instance_states.clone();
             let set_readings = set_readings.clone();
             let set_rebuild = set_wasm_rebuild_ms.clone();
+            let set_is_running_clone = set_is_running.clone();
             Timeout::new(500, move || {
                 set_states.update(|s| s[1] = 2); // rebuilding
                 
@@ -677,6 +678,7 @@ fn TMRPanel() -> impl IntoView {
                 let set_states = set_states.clone();
                 let set_readings = set_readings.clone();
                 let set_rebuild = set_rebuild.clone();
+                let set_is_running_clone = set_is_running_clone.clone();
                 wasm_bindgen_futures::spawn_local(async move {
                     // This calls the real measure_instantiate() JS function
                     let promise = measure_instantiate();
@@ -692,9 +694,10 @@ fn TMRPanel() -> impl IntoView {
                             set_rebuild.set(5.0);
                         }
                     }
-                    // Mark rebuild complete
+                    // Mark rebuild complete AND set running to false
                     set_states.update(|s| s[1] = 0);
                     set_readings.update(|r| r[1] = 2847.3);
+                    set_is_running_clone.set(false);
                 });
             }).forget();
         }
@@ -711,10 +714,8 @@ fn TMRPanel() -> impl IntoView {
             }
         }
         
-        // complete after 3s
-        Timeout::new(3000, move || {
-            set_is_running.set(false);
-        }).forget();
+        // NOTE: is_running is now set to false inside the async measurement completion
+        // This prevents the race condition where the timeout fires before measurement completes
     };
     
     // reset demo
