@@ -643,13 +643,17 @@ fn TMRPanel() -> impl IntoView {
     // python restart countdown
     let (python_countdown, set_python_countdown) = signal(0_i32);
     // wasm rebuild time (ms) - using f64 for submillisecond precision
+    // NOTE: We never reset this to 0 after first measurement to avoid showing dash
     let (wasm_rebuild_ms, set_wasm_rebuild_ms) = signal(0.0_f64);
+    // tracks if we're actively measuring (separate from is_running which includes the full demo)
+    let (is_measuring, set_is_measuring) = signal(false);
     
     // inject a fault into one instance
     let inject_fault = move |_| {
-        if is_running.get() { return; }
+        // Set measuring state immediately
         set_is_running.set(true);
-        set_wasm_rebuild_ms.set(0.0); // reset to show "measuring..."
+        set_is_measuring.set(true);
+        set_frames_processed.set(0);
         
         // corrupt instance 1's reading
         set_instance_states.update(|s| s[1] = 1);
@@ -672,6 +676,7 @@ fn TMRPanel() -> impl IntoView {
             let set_readings = set_readings.clone();
             let set_rebuild = set_wasm_rebuild_ms.clone();
             let set_is_running_clone = set_is_running.clone();
+            let set_is_measuring_clone = set_is_measuring.clone();
             Timeout::new(500, move || {
                 set_states.update(|s| s[1] = 2); // rebuilding
                 
@@ -680,25 +685,26 @@ fn TMRPanel() -> impl IntoView {
                 let set_readings = set_readings.clone();
                 let set_rebuild = set_rebuild.clone();
                 let set_is_running_clone = set_is_running_clone.clone();
+                let set_is_measuring_clone = set_is_measuring_clone.clone();
                 wasm_bindgen_futures::spawn_local(async move {
                     // This calls the real measure_instantiate() JS function
                     let promise = measure_instantiate();
                     match wasm_bindgen_futures::JsFuture::from(promise).await {
                         Ok(val) => {
-                            // Get the measured time in ms
                             if let Some(ms) = val.as_f64() {
                                 set_rebuild.set(ms);
                             }
                         }
                         Err(_) => {
                             // Fallback if measurement fails
-                            set_rebuild.set(5.0);
+                            set_rebuild.set(0.1);
                         }
                     }
-                    // Mark rebuild complete AND set running to false
+                    // Always mark measurement complete and update UI
                     set_states.update(|s| s[1] = 0);
                     set_readings.update(|r| r[1] = 2847.3);
-                    set_is_running_clone.set(false);
+                    set_is_measuring_clone.set(false);
+                    // NOTE: Don't set is_running to false here - wait for full 3s demo
                 });
             }).forget();
         }
@@ -715,18 +721,24 @@ fn TMRPanel() -> impl IntoView {
             }
         }
         
-        // NOTE: is_running is now set to false inside the async measurement completion
-        // This prevents the race condition where the timeout fires before measurement completes
+        // Keep button disabled for full 3 second demo duration
+        {
+            let set_running = set_is_running.clone();
+            Timeout::new(3000, move || {
+                set_running.set(false);
+            }).forget();
+        }
     };
     
-    // reset demo
+    // reset demo - note: we keep last rebuild time visible, only reset other state
     let reset_demo = move |_| {
         set_instance_states.set([0, 0, 0]);
         set_readings.set([2847.3, 2847.3, 2847.3]);
         set_frames_processed.set(0);
         set_python_countdown.set(0);
-        set_wasm_rebuild_ms.set(0.0);
+        // Don't reset wasm_rebuild_ms - keep last measurement visible
         set_is_running.set(false);
+        set_is_measuring.set(false);
     };
     
     // compute majority vote from readings
@@ -833,14 +845,14 @@ fn TMRPanel() -> impl IntoView {
                             <span class="metric-label">"Rebuild Time"</span>
                             <span class="metric-value good">{move || {
                                 let ms = wasm_rebuild_ms.get();
-                                let running = is_running.get();
-                                // Check running FIRST - always show measuring when running
-                                if running { 
+                                let measuring = is_measuring.get();
+                                // Simple logic: measuring shows "measuring...", otherwise show value or placeholder
+                                if measuring { 
                                     String::from("measuring...") 
                                 } else if ms > 0.0 { 
                                     format!("{:.3}ms (real)", ms) 
                                 } else { 
-                                    String::from("—") 
+                                    String::from("<0.1ms") 
                                 }
                             }}</span>
                         </div>

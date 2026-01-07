@@ -77,20 +77,29 @@
             },
 
             // Measure WASM instantiate time (returns ms) - this is the "rebuild" time
+            // Uses multiple samples averaged for more accurate/stable readings
             measureInstantiate: async function () {
                 await this._ensureLoaded();
                 if (!this._compiledModule) {
                     this._compiledModule = await WebAssembly.compile(this._wasmBytes);
                 }
-                const start = performance.now();
-                // Instantiate with minimal imports (we just want timing, not full execution)
-                try {
-                    await WebAssembly.instantiate(this._compiledModule, {});
-                } catch (e) {
-                    // Expected - we don't provide all imports, but instantiation still runs
+
+                // Run 5 instantiations and take the average for more stable timing
+                const samples = [];
+                for (let i = 0; i < 5; i++) {
+                    const start = performance.now();
+                    try {
+                        await WebAssembly.instantiate(this._compiledModule, {});
+                    } catch (e) {
+                        // Expected - we don't provide all imports
+                    }
+                    const elapsed = performance.now() - start;
+                    samples.push(elapsed);
                 }
-                const elapsed = performance.now() - start;
-                return elapsed;
+
+                // Return average of samples (gives more variation visibility)
+                const avg = samples.reduce((a, b) => a + b, 0) / samples.length;
+                return avg;
             },
 
             // Get WASM binary size in bytes
