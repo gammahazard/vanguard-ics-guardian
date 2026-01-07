@@ -187,6 +187,14 @@ node cli/run.mjs
 
 ---
 
+#### 🔗 Secure Channel Mode — Internal SCADA Only
+<p align="center">
+  <img src="docs/images/attack-secure-channel-cropped.png" alt="Secure Channel Attack" width="700"/>
+</p>
+<p align="center"><em>External blocked ✗ | Internal SCADA endpoints allowed ✓</em></p>
+
+---
+
 #### 🔒 Full Lockdown Mode — All Access Denied
 <p align="center">
   <img src="docs/images/attack-lockdown-cropped.png" alt="Full Lockdown Attack" width="700"/>
