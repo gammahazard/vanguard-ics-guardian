@@ -222,6 +222,36 @@ body {
   color: var(--accent-green);
 }
 
+/* mobile: shrink diagram nodes to fit on one line */
+@media (max-width: 600px) {
+  .scenario-diagram {
+    gap: 0.25rem;
+    padding: 0.5rem;
+  }
+
+  .diagram-node {
+    padding: 0.4rem;
+    min-width: 55px;
+  }
+
+  .node-icon {
+    font-size: 1rem;
+    margin-bottom: 0.1rem;
+  }
+
+  .node-label {
+    font-size: 0.55rem;
+  }
+
+  .node-warning {
+    font-size: 0.5rem;
+  }
+
+  .diagram-arrow {
+    font-size: 0.9rem;
+  }
+}
+
 /* ---- panels ---- */
 .panel {
   background: var(--bg-panel);
@@ -755,15 +785,23 @@ input:checked+.toggle-slider::before {
   border-color: var(--accent-blue);
 }
 
-/* mobile: stack label above dropdown for extra breathing room */
-@media (max-width: 400px) {
+/* mobile: stack label above dropdown and prevent overflow */
+@media (max-width: 500px) {
   .package-selector {
     flex-direction: column;
-    gap: 0.5rem;
+    align-items: stretch;
+    gap: 0.4rem;
+  }
+
+  .package-selector label {
+    text-align: center;
+    font-size: 0.8rem;
   }
 
   .package-selector select {
     width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 }
 
