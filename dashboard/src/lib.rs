@@ -834,10 +834,11 @@ fn TMRPanel() -> impl IntoView {
                             <span class="metric-value good">{move || {
                                 let ms = wasm_rebuild_ms.get();
                                 let running = is_running.get();
-                                if ms > 0.0 { 
-                                    format!("{:.3}ms (real)", ms) 
-                                } else if running { 
+                                // Check running FIRST - always show measuring when running
+                                if running { 
                                     String::from("measuring...") 
+                                } else if ms > 0.0 { 
+                                    format!("{:.3}ms (real)", ms) 
                                 } else { 
                                     String::from("—") 
                                 }
