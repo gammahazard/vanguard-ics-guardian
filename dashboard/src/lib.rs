@@ -649,6 +649,7 @@ fn TMRPanel() -> impl IntoView {
     let inject_fault = move |_| {
         if is_running.get() { return; }
         set_is_running.set(true);
+        set_wasm_rebuild_ms.set(0.0); // reset to show "measuring..."
         
         // corrupt instance 1's reading
         set_instance_states.update(|s| s[1] = 1);
