@@ -205,7 +205,7 @@ node cli/run.mjs
 <details>
 <summary><h3>📦 Docker vs WASI Deployment Comparison</h3></summary>
 
-> See the 3333x size difference in action
+> See the size difference in action
 
 #### Deploying First Package (Docker: 50 MB vs WASI: 15 KB)
 <p align="center">
@@ -218,7 +218,7 @@ node cli/run.mjs
 <p align="center">
   <img src="docs/images/deploy-complete.png" alt="Deployment Complete" width="700"/>
 </p>
-<p align="center"><em>WASI deployed: <strong>3333x smaller</strong> with <strong>3333x faster download</strong></em></p>
+<p align="center"><em>WASI deployed: <strong>at minimum 500x smaller</strong> with <strong>at least 500x faster download</strong></em></p>
 
 </details>
 
