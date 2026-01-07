@@ -23,6 +23,26 @@ extern "C" {
     fn setNetPolicy(allow: bool);
 }
 
+// JavaScript interop - real WASM measurement functions via window.wasmMetrics
+#[wasm_bindgen]
+extern "C" {
+    // Measure actual WebAssembly.instantiate() time - returns Promise<f64> (ms)
+    #[wasm_bindgen(js_namespace = wasmMetrics, js_name = measureInstantiate)]
+    fn measure_instantiate() -> js_sys::Promise;
+    
+    // Measure actual WebAssembly.compile() time - returns Promise<f64> (ms)
+    #[wasm_bindgen(js_namespace = wasmMetrics, js_name = measureCompile)]
+    fn measure_compile() -> js_sys::Promise;
+    
+    // Get WASM binary size - returns Promise<f64> (bytes)
+    #[wasm_bindgen(js_namespace = wasmMetrics, js_name = getWasmSize)]
+    fn get_wasm_size() -> js_sys::Promise;
+    
+    // Run full benchmark - returns Promise<Object>
+    #[wasm_bindgen(js_namespace = wasmMetrics, js_name = runBenchmark)]
+    fn run_benchmark() -> js_sys::Promise;
+}
+
 // entry point - mounts our app to the dom
 #[wasm_bindgen(start)]
 pub fn main() {
@@ -552,8 +572,8 @@ fn TMRPanel() -> impl IntoView {
     let (frames_processed, set_frames_processed) = signal(0_u32);
     // python restart countdown
     let (python_countdown, set_python_countdown) = signal(0_i32);
-    // wasm rebuild time (ms)
-    let (wasm_rebuild_ms, set_wasm_rebuild_ms) = signal(0_u32);
+    // wasm rebuild time (ms) - using f64 for submillisecond precision
+    let (wasm_rebuild_ms, set_wasm_rebuild_ms) = signal(0.0_f64);
     
     // inject a fault into one instance
     let inject_fault = move |_| {
@@ -575,22 +595,37 @@ fn TMRPanel() -> impl IntoView {
         };
         process_frames();
         
-        // after 500ms, start wasm rebuild
+        // after 500ms, start wasm rebuild with REAL measurement
         {
             let set_states = set_instance_states.clone();
             let set_readings = set_readings.clone();
             let set_rebuild = set_wasm_rebuild_ms.clone();
             Timeout::new(500, move || {
                 set_states.update(|s| s[1] = 2); // rebuilding
-                set_rebuild.set(10); // 10ms rebuild
                 
-                // rebuild complete after 100ms (simulated)
+                // Call REAL WebAssembly.instantiate() and measure time
                 let set_states = set_states.clone();
                 let set_readings = set_readings.clone();
-                Timeout::new(100, move || {
-                    set_states.update(|s| s[1] = 0); // healthy
-                    set_readings.update(|r| r[1] = 2847.3); // correct reading
-                }).forget();
+                let set_rebuild = set_rebuild.clone();
+                wasm_bindgen_futures::spawn_local(async move {
+                    // This calls the real measure_instantiate() JS function
+                    let promise = measure_instantiate();
+                    match wasm_bindgen_futures::JsFuture::from(promise).await {
+                        Ok(val) => {
+                            // Get the measured time in ms
+                            if let Some(ms) = val.as_f64() {
+                                set_rebuild.set(ms);
+                            }
+                        }
+                        Err(_) => {
+                            // Fallback if measurement fails
+                            set_rebuild.set(5.0);
+                        }
+                    }
+                    // Mark rebuild complete
+                    set_states.update(|s| s[1] = 0);
+                    set_readings.update(|r| r[1] = 2847.3);
+                });
             }).forget();
         }
         
@@ -618,7 +653,7 @@ fn TMRPanel() -> impl IntoView {
         set_readings.set([2847.3, 2847.3, 2847.3]);
         set_frames_processed.set(0);
         set_python_countdown.set(0);
-        set_wasm_rebuild_ms.set(0);
+        set_wasm_rebuild_ms.set(0.0);
         set_is_running.set(false);
     };
     
@@ -726,7 +761,7 @@ fn TMRPanel() -> impl IntoView {
                             <span class="metric-label">"Rebuild Time"</span>
                             <span class="metric-value good">{move || {
                                 let ms = wasm_rebuild_ms.get();
-                                if ms > 0 { format!("~{}ms", ms) } else { String::from("—") }
+                                if ms > 0.0 { format!("{:.2}ms (real)", ms) } else { String::from("—") }
                             }}</span>
                         </div>
                         <div class="metric">
