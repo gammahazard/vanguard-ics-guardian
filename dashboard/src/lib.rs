@@ -835,7 +835,7 @@ fn TMRPanel() -> impl IntoView {
                                 let ms = wasm_rebuild_ms.get();
                                 let running = is_running.get();
                                 if ms > 0.0 { 
-                                    format!("{:.2}ms (real)", ms) 
+                                    format!("{:.3}ms (real)", ms) 
                                 } else if running { 
                                     String::from("measuring...") 
                                 } else { 
