@@ -97,7 +97,8 @@ vanguard-ics-guardian/
 │   └── ml.Dockerfile       # ~2 GB (tensorflow)
 └── docs/
     ├── ARCHITECTURE.md     # WASI vs Docker rationale
-    └── BRANCHING.md        # Git workflow
+    ├── BRANCHING.md        # Git workflow
+    └── SECURITY.md         # Security analysis + IEC 62443
 ```
 
 ## 🚀 Quick Start
