@@ -83,6 +83,8 @@ vanguard-ics-guardian/
 │   │   └── sockets.js      # Data diode + secure channel
 │   └── test/
 │       └── shims.test.js   # 18 unit tests
+├── cli/                    # Node.js CLI demo (proves browser → edge portability)
+│   └── run.mjs             # Same WASM, measured outside browser
 ├── dashboard/              # Leptos web UI
 │   ├── src/lib.rs          # Reactive security console
 │   └── styles.css          # Mobile-responsive
@@ -110,6 +112,12 @@ cd dashboard && trunk serve
 **Run the Host Demo:**
 ```bash
 cd host && npm install && npm run demo
+```
+
+**Run the CLI Demo (proves browser → edge portability):**
+```bash
+node cli/run.mjs
+# Shows real instantiation benchmarks (~0.1-0.5ms)
 ```
 
 ## 📊 Security Modes

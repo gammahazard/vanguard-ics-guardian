@@ -1,0 +1,11 @@
+{
+    "name": "ics-guardian-cli",
+    "version": "1.0.0",
+    "description": "Node.js CLI demo proving WASM component runs outside browser",
+    "type": "module",
+    "scripts": {
+        "demo": "node run.mjs",
+        "benchmark": "node run.mjs --benchmark"
+    },
+    "dependencies": {}
+}
