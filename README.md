@@ -85,7 +85,7 @@ vanguard-ics-guardian/
 │   │   ├── filesystem.js   # Mock filesystem capabilities
 │   │   └── sockets.js      # Data diode + secure channel
 │   └── test/
-│       └── shims.test.js   # 18 unit tests
+│       └── shims.test.js   # 17 unit tests
 ├── cli/                    # Node.js CLI demo (proves browser → edge portability)
 │   └── run.mjs             # Same WASM, measured outside browser
 ├── dashboard/              # Leptos web UI

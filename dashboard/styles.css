@@ -356,6 +356,51 @@ body {
   font-weight: 600;
 }
 
+/* ---- mode preset buttons ---- */
+.mode-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.preset-btn {
+  flex: 1;
+  min-width: 100px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  border: 1px solid var(--bg-hover);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.preset-btn:hover {
+  border-color: var(--accent-blue);
+  color: var(--text-primary);
+}
+
+.preset-btn.active {
+  background: var(--accent-blue);
+  border-color: var(--accent-blue);
+  color: white;
+  font-weight: 600;
+}
+
+@media (max-width: 500px) {
+  .mode-presets {
+    flex-direction: column;
+  }
+
+  .preset-btn {
+    min-width: 100%;
+  }
+}
+
 /* ---- mode selector (dropdown) ---- */
 .mode-selector {
   display: flex;

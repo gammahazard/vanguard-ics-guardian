@@ -59,6 +59,7 @@ fn App() -> impl IntoView {
     // reactive state for security policy toggles
     let (allow_sensor, set_allow_sensor) = signal(true);
     let (allow_network, set_allow_network) = signal(false);
+    let (allow_internal, set_allow_internal) = signal(false); // for Secure Channel mode
     
     // simulation state
     let (is_running, set_is_running) = signal(false);
@@ -94,6 +95,8 @@ fn App() -> impl IntoView {
                         set_allow_sensor=set_allow_sensor
                         allow_network=allow_network
                         set_allow_network=set_allow_network
+                        allow_internal=allow_internal
+                        set_allow_internal=set_allow_internal
                     />
                     
                     <SensorDataPanel data=sensor_data/>
@@ -222,20 +225,53 @@ fn SensorDataPanel(data: ReadSignal<Option<SensorData>>) -> impl IntoView {
 }
 
 // policy control panel - toggles for sensor/network access
+// now with mode presets including Secure Channel
 #[component]
 fn PolicyPanel(
     allow_sensor: ReadSignal<bool>,
     set_allow_sensor: WriteSignal<bool>,
     allow_network: ReadSignal<bool>,
     set_allow_network: WriteSignal<bool>,
+    allow_internal: ReadSignal<bool>,
+    set_allow_internal: WriteSignal<bool>,
 ) -> impl IntoView {
     // derive the mode name from current policy
+    // 5 modes: Data Diode, Secure Channel, Full Lockdown, Breach, Invalid Config
     let mode_name = move || {
-        match (allow_sensor.get(), allow_network.get()) {
-            (true, false) => ("🛡️ Data Diode Mode", "data-diode"),
-            (false, false) => ("🔒 Full Lockdown", "lockdown"),
-            (true, true) => ("⚠️ Breach Simulation", "breach"),
-            (false, true) => ("❓ Invalid Config", "invalid"),
+        match (allow_sensor.get(), allow_network.get(), allow_internal.get()) {
+            (true, false, false) => ("🛡️ Data Diode Mode", "data-diode"),
+            (true, false, true) => ("🔗 Secure Channel", "secure-channel"),
+            (false, false, false) => ("🔒 Full Lockdown", "lockdown"),
+            (true, true, _) => ("⚠️ Breach Simulation", "breach"),
+            (false, true, _) => ("❓ Invalid Config", "invalid"),
+            (false, false, true) => ("❓ Invalid Config", "invalid"),
+        }
+    };
+    
+    // preset mode handler - sets all toggles at once
+    let set_mode = move |mode: &str| {
+        match mode {
+            "data-diode" => {
+                set_allow_sensor.set(true);
+                set_allow_network.set(false);
+                set_allow_internal.set(false);
+            },
+            "secure-channel" => {
+                set_allow_sensor.set(true);
+                set_allow_network.set(false);
+                set_allow_internal.set(true);
+            },
+            "lockdown" => {
+                set_allow_sensor.set(false);
+                set_allow_network.set(false);
+                set_allow_internal.set(false);
+            },
+            "breach" => {
+                set_allow_sensor.set(true);
+                set_allow_network.set(true);
+                set_allow_internal.set(true);
+            },
+            _ => {}
         }
     };
     
@@ -247,6 +283,34 @@ fn PolicyPanel(
                 <span class="mode-label">{move || mode_name().0}</span>
             </div>
             
+            // Mode preset buttons
+            <div class="mode-presets">
+                <button 
+                    class={move || if mode_name().1 == "data-diode" { "preset-btn active" } else { "preset-btn" }}
+                    on:click=move |_| set_mode("data-diode")
+                >
+                    "🛡️ Data Diode"
+                </button>
+                <button 
+                    class={move || if mode_name().1 == "secure-channel" { "preset-btn active" } else { "preset-btn" }}
+                    on:click=move |_| set_mode("secure-channel")
+                >
+                    "🔗 Secure Channel"
+                </button>
+                <button 
+                    class={move || if mode_name().1 == "lockdown" { "preset-btn active" } else { "preset-btn" }}
+                    on:click=move |_| set_mode("lockdown")
+                >
+                    "🔒 Lockdown"
+                </button>
+                <button 
+                    class={move || if mode_name().1 == "breach" { "preset-btn active" } else { "preset-btn" }}
+                    on:click=move |_| set_mode("breach")
+                >
+                    "⚠️ Breach"
+                </button>
+            </div>
+            
             <div class="policy-toggles">
                 <PolicyToggle
                     label="Filesystem Access"
@@ -256,21 +320,27 @@ fn PolicyPanel(
                 />
                 
                 <PolicyToggle
-                    label="Network Access"
-                    description="Block untrusted egress (exfiltration attempts)"
+                    label="External Network"
+                    description="Block egress to external/cloud endpoints"
                     checked=allow_network
                     on_toggle=move |v| set_allow_network.set(v)
+                />
+                
+                <PolicyToggle
+                    label="Internal Network"
+                    description="Allow approved internal SCADA endpoints"
+                    checked=allow_internal
+                    on_toggle=move |v| set_allow_internal.set(v)
                 />
             </div>
             
             <p class="policy-note">
-                "💡 Network toggle controls "
-                <strong>"outbound"</strong>
-                " connections only. Trusted updates arrive via secure side-channel."
+                "💡 Secure Channel allows internal SCADA (10.0.0.50:502, 10.0.0.51:102) but blocks external cloud."
             </p>
         </section>
     }
 }
+
 
 // individual toggle switch component
 #[component]
