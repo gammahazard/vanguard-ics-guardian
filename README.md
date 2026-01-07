@@ -306,6 +306,9 @@ The dashboard includes a **Triple Modular Redundancy (TMR)** visualization demon
 
 > 📖 Aligns with **IEC 61508 SIL 2/3** patterns for safety-critical systems.
 
+> 🔗 **Want to see 2oo3 in action with attack simulations?** Check out the companion project:
+> **[Protocol Gateway Sandbox](https://protocol-gateway-sandbox.vercel.app)** — Watch buffer overflows, truncated headers, and illegal function codes get isolated by WASM voting while Python crashes.
+
 ## 🧪 Verification & Testing
 
 This project includes a comprehensive test suite using **Vitest** to verify the security invariants of the WASI shim. We test the Host implementation directly to ensure permissions are enforced *before* the Guest code even runs.

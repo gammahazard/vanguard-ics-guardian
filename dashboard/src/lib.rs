@@ -904,6 +904,14 @@ fn TMRPanel() -> impl IntoView {
                 <strong>"self-healing"</strong>
                 <span>", eliminating the MTTR vulnerability window."</span>
             </div>
+            
+            <div class="tmr-link">
+                <span>"🔗 Want to see attack simulations? "</span>
+                <a href="https://protocol-gateway-sandbox.vercel.app" target="_blank" rel="noopener">
+                    "Protocol Gateway Sandbox"
+                </a>
+                <span>" – Watch buffer overflows get isolated by 2oo3 voting."</span>
+            </div>
         </section>
     }
 }

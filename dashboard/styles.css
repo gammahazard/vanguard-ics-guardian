@@ -1471,6 +1471,27 @@ input:checked+.toggle-slider::before {
   margin-top: 0.25rem;
 }
 
+.tmr-link {
+  padding: 0.75rem;
+  background: rgba(0, 255, 136, 0.05);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  border-left: 2px solid var(--accent-green);
+  text-align: center;
+  margin-top: 0.75rem;
+}
+
+.tmr-link a {
+  color: var(--accent-green);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.tmr-link a:hover {
+  text-decoration: underline;
+}
+
 @media (max-width: 600px) {
   .instance-grid {
     grid-template-columns: 1fr;
