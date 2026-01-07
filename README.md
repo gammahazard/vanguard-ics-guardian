@@ -180,7 +180,7 @@ node cli/run.mjs
 
 #### 🛡️ Data Diode Mode — Exfiltration Blocked
 <p align="center">
-  <img src="docs/images/attack-data-diode.png" alt="Data Diode Attack" width="700"/>
+  <img src="docs/images/attack-terminal-cropped.png" alt="Data Diode Attack" width="700"/>
 </p>
 <p align="center"><em>Sensor read succeeds ✓ | Network exfiltration blocked ✗</em></p>
 
@@ -188,7 +188,7 @@ node cli/run.mjs
 
 #### 🔒 Full Lockdown Mode — All Access Denied
 <p align="center">
-  <img src="docs/images/attack-full-lockdown.png" alt="Full Lockdown Attack" width="700"/>
+  <img src="docs/images/attack-lockdown-cropped.png" alt="Full Lockdown Attack" width="700"/>
 </p>
 <p align="center"><em>Zero trust: filesystem blocked, network blocked</em></p>
 
@@ -196,7 +196,7 @@ node cli/run.mjs
 
 #### ⚠️ Breach Simulation — Security Failure Demo
 <p align="center">
-  <img src="docs/images/attack-breach.png" alt="Breach Simulation" width="700"/>
+  <img src="docs/images/attack-breach-cropped.png" alt="Breach Simulation" width="700"/>
 </p>
 <p align="center"><em>What happens when security is misconfigured — data exfiltrated!</em></p>
 
@@ -207,16 +207,8 @@ node cli/run.mjs
 
 > See the size difference in action
 
-#### Deploying First Package (Docker: 50 MB vs WASI: 15 KB)
 <p align="center">
-  <img src="docs/images/deploy-comparison.png" alt="Deployment Start" width="700"/>
-</p>
-
----
-
-#### Deployment Complete — WASI Wins
-<p align="center">
-  <img src="docs/images/deploy-complete.png" alt="Deployment Complete" width="700"/>
+  <img src="docs/images/deploy-cropped.png" alt="Deployment Comparison" width="700"/>
 </p>
 <p align="center"><em>WASI deployed: <strong>at minimum 500x smaller</strong> with <strong>at least 500x faster download</strong></em></p>
 
@@ -271,7 +263,7 @@ The dashboard includes a **Triple Modular Redundancy (TMR)** visualization demon
 <summary><strong>📹 Watch: Fault Injection → Instant WASM Recovery</strong></summary>
 <br/>
 <p align="center">
-  <img src="docs/images/fault-injection-demo.webp" alt="Fault Injection Demo" width="700"/>
+  <img src="docs/images/fault-injection-cropped.webp" alt="Fault Injection Demo" width="700"/>
 </p>
 <p align="center"><em>Click "Inject Fault" → WASM rebuilds in 0.2ms while Python takes 3+ seconds</em></p>
 </details>
