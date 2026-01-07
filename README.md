@@ -12,7 +12,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/status-complete-success" alt="Status"/>
-  <img src="https://img.shields.io/badge/tests-18%20passing-brightgreen" alt="Tests"/>
+  <img src="https://img.shields.io/badge/tests-17%20passing-brightgreen" alt="Tests"/>
   <a href="https://vanguard-ics-guardian.vercel.app"><img src="https://img.shields.io/badge/demo-live-blue" alt="Demo"/></a>
   <img src="https://img.shields.io/badge/license-MIT-blue" alt="License"/>
   <img src="https://img.shields.io/badge/mobile-responsive-blueviolet" alt="Mobile Responsive"/>

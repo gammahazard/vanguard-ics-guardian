@@ -3,7 +3,7 @@
     "outputDirectory": "dashboard/dist",
     "framework": null,
     "installCommand": "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && . $HOME/.cargo/env && rustup target add wasm32-unknown-unknown",
-    "ignoreCommand": "git diff --quiet HEAD^ HEAD -- dashboard/ host/ guest/ wit/ vercel.json || exit 0",
+    "ignoreCommand": "git diff --quiet HEAD^ HEAD -- dashboard/ host/ guest/ wit/ vercel.json",
     "git": {
         "deploymentEnabled": {
             "main": true,
