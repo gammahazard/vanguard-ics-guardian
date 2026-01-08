@@ -66,11 +66,13 @@ Protects against **SolarWinds-style** supply chain attacks.
 
 ## 🔧 Tech Stack
 
-- **Standard:** WASI 0.2 (Preview 2) Component Model
-- **Guest Language:** Rust with `cargo-component`
-- **Host Runtime:** JavaScript via `@bytecodealliance/jco`
-- **Dashboard:** Leptos (Rust reactive web framework)
-- **Interface Definition:** WIT with `wit-bindgen`
+| Layer | Technology |
+|-------|------------|
+| **Standard** | WASI 0.2 (Preview 2) Component Model |
+| **Guest Language** | Rust with `cargo-component` |
+| **Host Runtime** | JavaScript via `@bytecodealliance/jco` |
+| **Dashboard** | Leptos (Rust reactive web framework) |
+| **Interface Definition** | WIT with `wit-bindgen` |
 
 ## 📁 Project Structure
 
@@ -365,6 +367,28 @@ The WASM component is **production-portable**—the same `.wasm` binary runs on 
 3. Add hardware watchdog for 2oo3 voter process
 
 > 📖 The architecture patterns (capability isolation, 2oo3 voting) translate directly to real ICS deployments.
+
+## 🍓 Hardware Demo (Coming Soon)
+
+The same `.wasm` binary will run on real industrial hardware:
+
+| Hardware | Sensors | What It Proves |
+|----------|---------|----------------|
+| **Raspberry Pi 4** | DHT22, BME280, DS18B20 | Same WASM, real data, real security |
+
+This works because the project follows the **WASI 0.2 Component Model** — a W3C standard that defines how WASM modules interact with the outside world through capability-based interfaces. The guest component only knows about abstract interfaces (`sensor-fs`, `sensor-net`), not whether it's running in a browser or on a Pi.
+
+**What stays the same:**
+- `guest.wasm` — identical binary, zero changes
+- WIT interface — same capability contracts
+- Security model — data diode still blocks network
+
+**What we'll build:**
+- **Rust host** replacing JavaScript shims with real GPIO/I2C via `rppal`
+- `sensor-fs` implementation reads actual sensor data instead of mock JSON
+- `sensor-utils::log()` writes to RGB OLED display instead of console
+
+> 🎬 Demo video coming soon — split-screen browser dashboard + physical Pi with sensors.
 
 ## 🌿 Branch Strategy
 
