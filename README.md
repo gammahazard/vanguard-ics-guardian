@@ -79,8 +79,6 @@ Vendor Build ───▶ Vanguard Hub ───▶ Edge Device
 
 Protects against **SolarWinds-style** supply chain attacks.
 
-📖 **[Read full architecture doc →](docs/ARCHITECTURE.md)** - WASI vs Docker comparison
-
 ## 🔧 Tech Stack
 
 | Layer | Technology |
@@ -280,8 +278,6 @@ This project demonstrates key principles from the **IEC 62443** industrial cyber
 | **Defense in Depth** | WASI capability model adds runtime-level security | [`filesystem.js`](host/shim/filesystem.js) |
 | **Least Privilege** | Components only receive explicitly granted capabilities | WIT interface definitions |
 | **Secure by Default** | Network access denied unless specifically whitelisted | Policy config in shims |
-
-> 📖 **[Read full architecture doc →](docs/ARCHITECTURE.md)** - Includes Purdue Model diagram and zone mapping
 
 > ⚠️ **Note:** This is a demonstration of IEC 62443 concepts, not a certified implementation. Formal compliance requires third-party assessment.
 
