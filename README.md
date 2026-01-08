@@ -402,11 +402,15 @@ This works because the project follows the **WASI 0.2 Component Model** — a W3
 - `sensor-utils::log()` writes to RGB OLED display instead of console
 
 > 🎬 Demo video coming soon — split-screen browser dashboard + physical Pi with sensors.
+>
+> 📖 **[Hardware Setup Guide →](docs/HARDWARE-SETUP.md)** — Wiring diagrams, GPIO pinouts, implementation code
 
 ## 📚 Documentation
 
 - [**Architecture Deep Dive**](docs/ARCHITECTURE.md): WASI vs Docker comparison, Purdue Model, capability isolation
 - [**Security Analysis**](docs/SECURITY.md): IEC 62443 alignment, attack surface reduction, what each technology solves
+- [**Hardware Setup**](docs/HARDWARE-SETUP.md): Raspberry Pi wiring, sensor configuration, Rust host implementation
+
 
 ## 🌿 Branch Strategy
 
