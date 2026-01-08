@@ -2,6 +2,10 @@
   <img src="https://img.shields.io/badge/WASI-0.2%20Preview%202-blueviolet?style=for-the-badge&logo=webassembly" alt="WASI 0.2"/>
   <img src="https://img.shields.io/badge/Rust-1.75+-orange?style=for-the-badge&logo=rust" alt="Rust"/>
   <img src="https://img.shields.io/badge/Component%20Model-Compliant-success?style=for-the-badge" alt="Component Model"/>
+  <img src="https://img.shields.io/badge/Wasmtime-Compatible-green?style=for-the-badge&logo=webassembly" alt="Wasmtime"/>
+  <img src="https://img.shields.io/badge/IEC%2062443-Aligned-blue?style=for-the-badge" alt="IEC 62443"/>
+  <img src="https://img.shields.io/badge/WASM%20Size-14.7%20KB-success?style=for-the-badge" alt="Binary Size"/>
+  <img src="https://img.shields.io/badge/Raspberry%20Pi-Coming%20Soon-ff69b4?style=for-the-badge&logo=raspberrypi" alt="Pi Ready"/>
 </p>
 
 <h1 align="center">🛡️ Vanguard ICS Guardian</h1>
@@ -402,6 +406,11 @@ This works because the project follows the **WASI 0.2 Component Model** — a W3
 - `sensor-utils::log()` writes to RGB OLED display instead of console
 
 > 🎬 Demo video coming soon — split-screen browser dashboard + physical Pi with sensors.
+
+## 📚 Documentation
+
+- [**Architecture Deep Dive**](docs/ARCHITECTURE.md): WASI vs Docker comparison, Purdue Model, capability isolation
+- [**Security Analysis**](docs/SECURITY.md): IEC 62443 alignment, attack surface reduction, what each technology solves
 
 ## 🌿 Branch Strategy
 
