@@ -24,6 +24,19 @@
 
 ---
 
+## 📑 Contents
+
+- [The Scenario](#-the-scenario-oil-rig-data-exfiltration) — What problem this solves
+- [Architecture](#️-architecture) — How it's built
+- [Quick Start](#-quick-start) — Run it locally
+- [Security Modes](#-security-modes) — Data Diode, Secure Channel, Lockdown, Breach
+- [2oo3 Fault Tolerance](#-2oo3-fault-tolerance-demo) — TMR voting demo
+- [Testing](#-verification--testing) — Security invariants
+- [Production Path](#-production-path-browser--edge-hardware) — Browser → Pi
+- [Hardware Demo](#-hardware-demo-coming-soon) — Raspberry Pi coming soon
+
+---
+
 ## 🎯 The Scenario: Oil Rig Data Exfiltration
 
 > *"A 3rd-party sensor driver on an offshore oil rig attempts to read pressure data and secretly exfiltrate it to a vendor cloud. Our WASI runtime acts as a Data Diode—allowing the read but blocking all outbound network connections."*
