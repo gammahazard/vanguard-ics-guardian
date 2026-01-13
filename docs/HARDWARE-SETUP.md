@@ -95,27 +95,23 @@ vanguard-ics-guardian/
 | File | What It Does |
 |------|--------------|
 | `pi-host/src/main.rs` | Load `guest.wasm`, create shim imports, run loop |
-| `pi-host/src/shim/filesystem.rs` | Replace mock JSON with real DHT22/BME280 reads |
+| `pi-host/src/shim/filesystem.rs` | Replace mock JSON with real BME280 reads |
 | `pi-host/src/shim/sockets.rs` | Return `Err("blocked")` for all network calls |
 | `pi-host/src/display.rs` | Write status to RGB OLED via SPI |
 
 **Key Code (filesystem.rs):**
 ```rust
-use rppal::{gpio::Gpio, i2c::I2c};
-use dht_sensor::{dht22, DhtReading};
+use rppal::i2c::I2c;
+use bme280::Bme280;
 
 pub fn read_sensors() -> String {
-    // DHT22 on GPIO4
-    let gpio = Gpio::new().unwrap();
-    let pin = gpio.get(4).unwrap().into_io(Mode::Output);
-    let reading = dht22::read(&mut delay, &mut pin).unwrap();
-    
-    // BME280 on I2C
+    // BME280 on I2C (address 0x76)
     let i2c = I2c::new().unwrap();
     let mut bme = Bme280::new_primary(i2c);
+    bme.init().unwrap();
     let measurements = bme.measure().unwrap();
     
-    format!(r#"{{"temp": {}, "humidity": {}, "pressure": {}}}"#,
-        reading.temperature, reading.humidity, measurements.pressure)
+    format!(r#"{{"temp": {:.1}, "humidity": {:.1}, "pressure": {:.1}}}"#,
+        measurements.temperature, measurements.humidity, measurements.pressure)
 }
 ```
