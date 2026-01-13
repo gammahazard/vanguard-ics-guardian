@@ -405,6 +405,19 @@ This works because the project follows the **WASI 0.2 Component Model** — a W3
 >
 > 📖 **[Hardware Setup Guide →](docs/HARDWARE-SETUP.md)** — Wiring diagrams, GPIO pinouts, implementation code
 
+## 🔗 Related Projects
+
+This project is part of the **Reliability Triad** — a portfolio demonstrating WASI 0.2 Component Model across security, protocol translation, and distributed consensus:
+
+| Project | Focus | Demo |
+|---------|-------|------|
+| **Vanguard ICS Guardian** (this) | Capability-based sandboxing | [Live Demo](https://vanguard-ics-guardian.vercel.app) |
+| [Protocol Gateway Sandbox](https://github.com/gammahazard/protocol-gateway-sandbox) | Modbus/MQTT translation | [Live Demo](https://protocol-gateway-sandbox.vercel.app) |
+| [Raft Consensus Cluster](https://github.com/gammahazard/Raft-Consensus) | Distributed consensus | [Live Demo](https://raft-consensus.vercel.app) |
+| [Guardian-One](https://github.com/gammahazard/guardian-one) | **Hardware implementation** | *Private - in development* |
+
+> **Guardian-One** is the hardware implementation of these concepts — a Rust/Wasmtime host running on Raspberry Pi 4 with BME280 sensors, SainSmart relays, and a 3-node Raft cluster for fault tolerance. Hardware demo coming soon.
+
 ## 📚 Documentation
 
 - [**Architecture Deep Dive**](docs/ARCHITECTURE.md): WASI vs Docker comparison, Purdue Model, capability isolation
